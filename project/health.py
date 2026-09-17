@@ -50,11 +50,11 @@ def health_check(request):
         "global_status": global_status,
         "groups": [
             {
-                "group_name": "Database Cluster",
+                "group_name": "Red Social / Consenso",
                 "group_status": group_status,
                 "services": [
-                    {"name": "postgres", "status": db_status},
-                    {"name": "redis-cache", "status": redis_status},
+                    {"name": "postgresql", "status": db_status},
+                    {"name": "redis", "status": redis_status},
                 ],
             }
         ],
