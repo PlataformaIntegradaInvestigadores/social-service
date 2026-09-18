@@ -13,7 +13,7 @@ def fetch_grs_topics(scopus_ids, k=5):
     Retorna una lista de nombres de tópico, o None si no hay vínculo con
     ningún grupo persistente del GRS o si el servicio no está disponible.
     """
-    #scopus_ids = [sid for sid in scopus_ids if sid]
+    # scopus_ids = [sid for sid in scopus_ids if sid]
     scopus_ids = [str(sid) for sid in scopus_ids if sid]
     if not scopus_ids:
         return None
@@ -35,6 +35,5 @@ def fetch_grs_topics(scopus_ids, k=5):
         return None
 
     return [
-        recommendation["topic"]
-        for recommendation in data.get("recommendations", [])
+        recommendation["topic"] for recommendation in data.get("recommendations", [])
     ]

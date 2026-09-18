@@ -2,7 +2,10 @@ from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
-    help = "Comando retirado: los embeddings de investigador ya no pertenecen a la base social."
+    help = (
+        "Comando retirado: los embeddings de investigador ya no pertenecen "
+        "a la base social."
+    )
 
     def handle(self, *args, **options):
         self.stdout.write(

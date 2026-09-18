@@ -8,6 +8,7 @@ class Command(BaseCommand):
         self.stdout.write(
             self.style.WARNING(
                 "export_identity_profile_data fue retirado. "
-                "La base social ya no contiene usuarios, perfiles, grupos ni membresias legacy."
+                "La base social ya no contiene usuarios, perfiles, grupos "
+                "ni membresias legacy."
             )
         )

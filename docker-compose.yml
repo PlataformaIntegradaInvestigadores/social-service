@@ -1,5 +1,5 @@
 services:
-  web:
+  social-service:
     build: .
     command: daphne -b 0.0.0.0 -p 8000 project.asgi:application
     volumes:
@@ -10,9 +10,9 @@ services:
     ports:
       - "127.0.0.1:8000:8000"
     depends_on:
-      db:
+      social-db:
         condition: service_healthy
-      redis:
+      social-redis:
         condition: service_healthy
     env_file:
       - .env
@@ -21,9 +21,9 @@ services:
     networks:
       centinela-net:
         aliases:
-          - social-consensus-web
+          - social-service
 
-  db:
+  social-db:
     image: pgvector/pgvector:pg16
     restart: unless-stopped
     ports:
@@ -43,7 +43,7 @@ services:
     networks:
       - centinela-net
 
-  redis:
+  social-redis:
     image: redis:6
     restart: unless-stopped
     ports:
@@ -59,7 +59,7 @@ services:
     networks:
       - centinela-net
 
-  celery_worker:
+  social-worker:
     build: .
     restart: unless-stopped
     security_opt:
@@ -68,9 +68,9 @@ services:
     volumes:
       - .:/app
     depends_on:
-      db:
+      social-db:
         condition: service_healthy
-      redis:
+      social-redis:
         condition: service_healthy
     env_file:
       - .env
@@ -79,7 +79,7 @@ services:
     networks:
       - centinela-net
 
-  celery_beat:
+  social-beat:
     build: .
     restart: unless-stopped
     security_opt:
@@ -88,9 +88,9 @@ services:
     volumes:
       - .:/app
     depends_on:
-      db:
+      social-db:
         condition: service_healthy
-      redis:
+      social-redis:
         condition: service_healthy
     env_file:
       - .env

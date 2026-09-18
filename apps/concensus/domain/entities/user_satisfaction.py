@@ -1,4 +1,5 @@
 from django.db import models
+
 from apps.custom_auth.identity_principal import (
     group_ref_from_snapshot,
     group_snapshot_from_principal,
@@ -6,13 +7,14 @@ from apps.custom_auth.identity_principal import (
     snapshot_from_principal,
 )
 
+
 class UserSatisfaction(models.Model):
     SATISFACTION_CHOICES = [
-        ('Unsatisfied', 'Unsatisfied'),
-        ('Slightly Unsatisfied', 'Slightly Unsatisfied'),
-        ('Neutral', 'Neutral'),
-        ('Slightly Satisfied', 'Slightly Satisfied'),
-        ('Satisfied', 'Satisfied'),
+        ("Unsatisfied", "Unsatisfied"),
+        ("Slightly Unsatisfied", "Slightly Unsatisfied"),
+        ("Neutral", "Neutral"),
+        ("Slightly Satisfied", "Slightly Satisfied"),
+        ("Satisfied", "Satisfied"),
     ]
 
     user_identity_id = models.CharField(max_length=64, db_index=True)
@@ -24,7 +26,7 @@ class UserSatisfaction(models.Model):
     message = models.TextField()
 
     class Meta:
-        unique_together = ('user_identity_id', 'group_identity_id')
+        unique_together = ("user_identity_id", "group_identity_id")
 
     @property
     def user(self):
@@ -44,5 +46,6 @@ class UserSatisfaction(models.Model):
         self.group_identity_id = str(value.id)
         self.group_snapshot = group_snapshot_from_principal(value)
 
-#select * from concensus_usersatisfaction;
-       # truncate table concensus_usersatisfaction;
+
+# select * from concensus_usersatisfaction;
+# truncate table concensus_usersatisfaction;

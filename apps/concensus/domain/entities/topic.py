@@ -7,6 +7,7 @@ from apps.custom_auth.identity_principal import (
     snapshot_from_principal,
 )
 
+
 class Topic(models.Model):
     name = models.CharField(max_length=100)
     group_identity_id = models.CharField(max_length=64, db_index=True)
@@ -24,9 +25,12 @@ class Topic(models.Model):
     def __str__(self):
         return self.name
 
+
 class RecommendedTopic(models.Model):
     topic_name = models.CharField(max_length=255)
-    group_identity_id = models.CharField(max_length=64, db_index=True, null=True, blank=True)
+    group_identity_id = models.CharField(
+        max_length=64, db_index=True, null=True, blank=True
+    )
     group_snapshot = models.JSONField(default=dict, blank=True)
 
     @property
@@ -46,9 +50,12 @@ class RecommendedTopic(models.Model):
 
     def __str__(self):
         return self.topic_name
-    
+
+
 class TopicAddedUser(models.Model):
-    topic = models.ForeignKey(RecommendedTopic, related_name='added_by_users', on_delete=models.CASCADE)
+    topic = models.ForeignKey(
+        RecommendedTopic, related_name="added_by_users", on_delete=models.CASCADE
+    )
     group_identity_id = models.CharField(max_length=64, db_index=True)
     group_snapshot = models.JSONField(default=dict, blank=True)
     user_identity_id = models.CharField(max_length=64, db_index=True)
@@ -74,11 +81,13 @@ class TopicAddedUser(models.Model):
         self.user_snapshot = snapshot_from_principal(value)
 
     def __str__(self):
-        return f"{self.user.username} added {self.topic.topic_name} to {self.group.name}"
-    
+        return (
+            f"{self.user.username} added {self.topic.topic_name} to {self.group.name}"
+        )
 
-#select * from "concensus_recommendedtopic";
-#select * from "concensus_topicaddeduser";
 
-    #TRUNCATE TABLE "concensus_recommendedtopic" CASCADE;
-    #TRUNCATE TABLE "concensus_topicaddeduser" CASCADE;
+# select * from "concensus_recommendedtopic";
+# select * from "concensus_topicaddeduser";
+
+# TRUNCATE TABLE "concensus_recommendedtopic" CASCADE;
+# TRUNCATE TABLE "concensus_topicaddeduser" CASCADE;

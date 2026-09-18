@@ -1,5 +1,6 @@
 # models.py
 from django.db import models
+
 from apps.custom_auth.identity_principal import (
     group_ref_from_snapshot,
     group_snapshot_from_principal,
@@ -7,18 +8,19 @@ from apps.custom_auth.identity_principal import (
     snapshot_from_principal,
 )
 
+
 class FinalTopicOrder(models.Model):
     id = models.AutoField(primary_key=True)
     idGroup_identity_id = models.CharField(max_length=64, db_index=True)
     idGroup_snapshot = models.JSONField(default=dict, blank=True)
     idUser_identity_id = models.CharField(max_length=64, db_index=True)
     idUser_snapshot = models.JSONField(default=dict, blank=True)
-    idTopic = models.ForeignKey('concensus.RecommendedTopic', on_delete=models.CASCADE)
+    idTopic = models.ForeignKey("concensus.RecommendedTopic", on_delete=models.CASCADE)
     posFinal = models.IntegerField()
     label = models.CharField(max_length=100, blank=True, null=True)
 
     class Meta:
-        unique_together = ('idGroup_identity_id', 'idUser_identity_id', 'idTopic')
+        unique_together = ("idGroup_identity_id", "idUser_identity_id", "idTopic")
 
     @property
     def idGroup(self):
@@ -39,4 +41,7 @@ class FinalTopicOrder(models.Model):
         self.idUser_snapshot = snapshot_from_principal(value)
 
     def __str__(self):
-        return f'Group {self.idGroup}, User {self.idUser}, Topic {self.idTopic}, Position {self.posFinal}'
+        return (
+            f"Group {self.idGroup}, User {self.idUser}, "
+            f"Topic {self.idTopic}, Position {self.posFinal}"
+        )

@@ -11,61 +11,258 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('custom_auth', '0001_initial'),
+        ("custom_auth", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Jobs',
+            name="Jobs",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=255, verbose_name='Título del puesto')),
-                ('description', models.TextField(verbose_name='Descripción')),
-                ('requirements', models.TextField(blank=True, null=True, verbose_name='Requisitos')),
-                ('benefits', models.TextField(blank=True, null=True, verbose_name='Beneficios')),
-                ('location', models.CharField(blank=True, max_length=255, null=True, verbose_name='Ubicación')),
-                ('job_type', models.CharField(choices=[('full_time', 'Tiempo completo'), ('part_time', 'Tiempo parcial'), ('contract', 'Contrato'), ('internship', 'Prácticas'), ('freelance', 'Freelance')], default='full_time', max_length=20, verbose_name='Tipo de trabajo')),
-                ('experience_level', models.CharField(choices=[('entry', 'Sin experiencia'), ('junior', 'Junior (1-2 años)'), ('mid', 'Intermedio (3-5 años)'), ('senior', 'Senior (5+ años)'), ('lead', 'Líder técnico (7+ años)')], default='entry', max_length=20, verbose_name='Nivel de experiencia')),
-                ('salary_min', models.DecimalField(blank=True, decimal_places=2, max_digits=10, null=True, verbose_name='Salario mínimo')),
-                ('salary_max', models.DecimalField(blank=True, decimal_places=2, max_digits=10, null=True, verbose_name='Salario máximo')),
-                ('status', models.CharField(choices=[('active', 'Activo'), ('inactive', 'Inactivo'), ('closed', 'Cerrado'), ('draft', 'Borrador')], default='draft', max_length=20, verbose_name='Estado')),
-                ('is_remote', models.BooleanField(default=False, verbose_name='Trabajo remoto')),
-                ('application_deadline', models.DateTimeField(blank=True, null=True, verbose_name='Fecha límite de aplicación')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Fecha de creación')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Fecha de actualización')),
-                ('embedding', pgvector.django.vector.VectorField(blank=True, dimensions=768, null=True, verbose_name='Vector de embedding para recomendaciones')),
-                ('interactions_score', models.FloatField(default=0.0, verbose_name='Score de interacciones')),
-                ('view_count', models.IntegerField(default=0, verbose_name='Número de visualizaciones')),
-                ('application_count', models.IntegerField(default=0, verbose_name='Número de aplicaciones')),
-                ('company', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='jobs', to='custom_auth.company', verbose_name='Empresa')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "title",
+                    models.CharField(max_length=255, verbose_name="Título del puesto"),
+                ),
+                ("description", models.TextField(verbose_name="Descripción")),
+                (
+                    "requirements",
+                    models.TextField(blank=True, null=True, verbose_name="Requisitos"),
+                ),
+                (
+                    "benefits",
+                    models.TextField(blank=True, null=True, verbose_name="Beneficios"),
+                ),
+                (
+                    "location",
+                    models.CharField(
+                        blank=True, max_length=255, null=True, verbose_name="Ubicación"
+                    ),
+                ),
+                (
+                    "job_type",
+                    models.CharField(
+                        choices=[
+                            ("full_time", "Tiempo completo"),
+                            ("part_time", "Tiempo parcial"),
+                            ("contract", "Contrato"),
+                            ("internship", "Prácticas"),
+                            ("freelance", "Freelance"),
+                        ],
+                        default="full_time",
+                        max_length=20,
+                        verbose_name="Tipo de trabajo",
+                    ),
+                ),
+                (
+                    "experience_level",
+                    models.CharField(
+                        choices=[
+                            ("entry", "Sin experiencia"),
+                            ("junior", "Junior (1-2 años)"),
+                            ("mid", "Intermedio (3-5 años)"),
+                            ("senior", "Senior (5+ años)"),
+                            ("lead", "Líder técnico (7+ años)"),
+                        ],
+                        default="entry",
+                        max_length=20,
+                        verbose_name="Nivel de experiencia",
+                    ),
+                ),
+                (
+                    "salary_min",
+                    models.DecimalField(
+                        blank=True,
+                        decimal_places=2,
+                        max_digits=10,
+                        null=True,
+                        verbose_name="Salario mínimo",
+                    ),
+                ),
+                (
+                    "salary_max",
+                    models.DecimalField(
+                        blank=True,
+                        decimal_places=2,
+                        max_digits=10,
+                        null=True,
+                        verbose_name="Salario máximo",
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("active", "Activo"),
+                            ("inactive", "Inactivo"),
+                            ("closed", "Cerrado"),
+                            ("draft", "Borrador"),
+                        ],
+                        default="draft",
+                        max_length=20,
+                        verbose_name="Estado",
+                    ),
+                ),
+                (
+                    "is_remote",
+                    models.BooleanField(default=False, verbose_name="Trabajo remoto"),
+                ),
+                (
+                    "application_deadline",
+                    models.DateTimeField(
+                        blank=True, null=True, verbose_name="Fecha límite de aplicación"
+                    ),
+                ),
+                (
+                    "created_at",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="Fecha de creación"
+                    ),
+                ),
+                (
+                    "updated_at",
+                    models.DateTimeField(
+                        auto_now=True, verbose_name="Fecha de actualización"
+                    ),
+                ),
+                (
+                    "embedding",
+                    pgvector.django.vector.VectorField(
+                        blank=True,
+                        dimensions=768,
+                        null=True,
+                        verbose_name="Vector de embedding para recomendaciones",
+                    ),
+                ),
+                (
+                    "interactions_score",
+                    models.FloatField(
+                        default=0.0, verbose_name="Score de interacciones"
+                    ),
+                ),
+                (
+                    "view_count",
+                    models.IntegerField(
+                        default=0, verbose_name="Número de visualizaciones"
+                    ),
+                ),
+                (
+                    "application_count",
+                    models.IntegerField(
+                        default=0, verbose_name="Número de aplicaciones"
+                    ),
+                ),
+                (
+                    "company",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="jobs",
+                        to="custom_auth.company",
+                        verbose_name="Empresa",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Trabajo',
-                'verbose_name_plural': 'Trabajos',
-                'db_table': 'jobs',
-                'ordering': ['-created_at'],
+                "verbose_name": "Trabajo",
+                "verbose_name_plural": "Trabajos",
+                "db_table": "jobs",
+                "ordering": ["-created_at"],
             },
         ),
         migrations.CreateModel(
-            name='Postulants',
+            name="Postulants",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('cover_letter', models.TextField(blank=True, null=True, verbose_name='Carta de presentación')),
-                ('resume_file', models.FileField(blank=True, null=True, upload_to='resumes/', verbose_name='Archivo de CV')),
-                ('status', models.CharField(choices=[('pending', 'Pendiente'), ('reviewing', 'En revisión'), ('interviewed', 'Entrevistado'), ('accepted', 'Aceptado'), ('rejected', 'Cancelado'), ('withdrawn', 'Retirado')], default='pending', max_length=20, verbose_name='Estado')),
-                ('notes', models.TextField(blank=True, null=True, verbose_name='Notas del reclutador')),
-                ('applied_at', models.DateTimeField(auto_now_add=True, verbose_name='Fecha de aplicación')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Fecha de actualización')),
-                ('job', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='applications', to='jobs.jobs', verbose_name='Trabajo')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='applications', to=settings.AUTH_USER_MODEL, verbose_name='Usuario')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "cover_letter",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="Carta de presentación"
+                    ),
+                ),
+                (
+                    "resume_file",
+                    models.FileField(
+                        blank=True,
+                        null=True,
+                        upload_to="resumes/",
+                        verbose_name="Archivo de CV",
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("pending", "Pendiente"),
+                            ("reviewing", "En revisión"),
+                            ("interviewed", "Entrevistado"),
+                            ("accepted", "Aceptado"),
+                            ("rejected", "Cancelado"),
+                            ("withdrawn", "Retirado"),
+                        ],
+                        default="pending",
+                        max_length=20,
+                        verbose_name="Estado",
+                    ),
+                ),
+                (
+                    "notes",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="Notas del reclutador"
+                    ),
+                ),
+                (
+                    "applied_at",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="Fecha de aplicación"
+                    ),
+                ),
+                (
+                    "updated_at",
+                    models.DateTimeField(
+                        auto_now=True, verbose_name="Fecha de actualización"
+                    ),
+                ),
+                (
+                    "job",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="applications",
+                        to="jobs.jobs",
+                        verbose_name="Trabajo",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="applications",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Usuario",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Postulante',
-                'verbose_name_plural': 'Postulantes',
-                'db_table': 'postulants',
-                'ordering': ['-applied_at'],
-                'unique_together': {('user', 'job')},
+                "verbose_name": "Postulante",
+                "verbose_name_plural": "Postulantes",
+                "db_table": "postulants",
+                "ordering": ["-applied_at"],
+                "unique_together": {("user", "job")},
             },
         ),
     ]

@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('feeds', '0002_add_poll_field'),
+        ("feeds", "0002_add_poll_field"),
     ]
 
     operations = []

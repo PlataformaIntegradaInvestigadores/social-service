@@ -12,13 +12,30 @@ class Migration(migrations.Migration):
     operations = [
         migrations.SeparateDatabaseAndState(
             database_operations=[
-                migrations.RunSQL("DROP TABLE IF EXISTS custom_auth_magiclink CASCADE;", migrations.RunSQL.noop),
-                migrations.RunSQL("DROP TABLE IF EXISTS profiles_information CASCADE;", migrations.RunSQL.noop),
-                migrations.RunSQL("DROP TABLE IF EXISTS group_users CASCADE;", migrations.RunSQL.noop),
-                migrations.RunSQL("DROP TABLE IF EXISTS groups CASCADE;", migrations.RunSQL.noop),
-                migrations.RunSQL("DROP TABLE IF EXISTS users_groups CASCADE;", migrations.RunSQL.noop),
-                migrations.RunSQL("DROP TABLE IF EXISTS users_user_permissions CASCADE;", migrations.RunSQL.noop),
-                migrations.RunSQL("DROP TABLE IF EXISTS users CASCADE;", migrations.RunSQL.noop),
+                migrations.RunSQL(
+                    "DROP TABLE IF EXISTS custom_auth_magiclink CASCADE;",
+                    migrations.RunSQL.noop,
+                ),
+                migrations.RunSQL(
+                    "DROP TABLE IF EXISTS profiles_information CASCADE;",
+                    migrations.RunSQL.noop,
+                ),
+                migrations.RunSQL(
+                    "DROP TABLE IF EXISTS group_users CASCADE;", migrations.RunSQL.noop
+                ),
+                migrations.RunSQL(
+                    "DROP TABLE IF EXISTS groups CASCADE;", migrations.RunSQL.noop
+                ),
+                migrations.RunSQL(
+                    "DROP TABLE IF EXISTS users_groups CASCADE;", migrations.RunSQL.noop
+                ),
+                migrations.RunSQL(
+                    "DROP TABLE IF EXISTS users_user_permissions CASCADE;",
+                    migrations.RunSQL.noop,
+                ),
+                migrations.RunSQL(
+                    "DROP TABLE IF EXISTS users CASCADE;", migrations.RunSQL.noop
+                ),
             ],
             state_operations=[
                 migrations.RemoveField(

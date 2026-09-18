@@ -11,171 +11,550 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('custom_auth', '0001_initial'),
+        ("custom_auth", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='RecommendedTopic',
+            name="RecommendedTopic",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('topic_name', models.CharField(max_length=255)),
-                ('group', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='recommended_topics', to='custom_auth.group')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("topic_name", models.CharField(max_length=255)),
+                (
+                    "group",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="recommended_topics",
+                        to="custom_auth.group",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='ConsensusResult',
+            name="ConsensusResult",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('final_value', models.FloatField()),
-                ('idGroup', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='custom_auth.group')),
-                ('idTopic', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='concensus.recommendedtopic')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("final_value", models.FloatField()),
+                (
+                    "idGroup",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="custom_auth.group",
+                    ),
+                ),
+                (
+                    "idTopic",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="concensus.recommendedtopic",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='Debate',
+            name="Debate",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=255)),
-                ('description', models.TextField()),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('end_time', models.DurationField()),
-                ('is_closed', models.BooleanField(default=False)),
-                ('group', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='debates', to='custom_auth.group')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("title", models.CharField(max_length=255)),
+                ("description", models.TextField()),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("end_time", models.DurationField()),
+                ("is_closed", models.BooleanField(default=False)),
+                (
+                    "group",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="debates",
+                        to="custom_auth.group",
+                    ),
+                ),
             ],
-            options={'db_table': 'debates'},
+            options={"db_table": "debates"},
         ),
         migrations.CreateModel(
-            name='DebateParticipant',
+            name="DebateParticipant",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('joined_at', models.DateTimeField(auto_now_add=True)),
-                ('is_collaborator', models.BooleanField(default=False)),
-                ('debate', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='participants', to='concensus.debate')),
-                ('participant', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("joined_at", models.DateTimeField(auto_now_add=True)),
+                ("is_collaborator", models.BooleanField(default=False)),
+                (
+                    "debate",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="participants",
+                        to="concensus.debate",
+                    ),
+                ),
+                (
+                    "participant",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
-            options={'db_table': 'debate_participants'},
+            options={"db_table": "debate_participants"},
         ),
         migrations.CreateModel(
-            name='FinalTopicOrder',
+            name="FinalTopicOrder",
             fields=[
-                ('id', models.AutoField(primary_key=True, serialize=False)),
-                ('posFinal', models.IntegerField()),
-                ('label', models.CharField(blank=True, max_length=100, null=True)),
-                ('idGroup', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='custom_auth.group')),
-                ('idUser', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
-                ('idTopic', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='concensus.recommendedtopic')),
+                ("id", models.AutoField(primary_key=True, serialize=False)),
+                ("posFinal", models.IntegerField()),
+                ("label", models.CharField(blank=True, max_length=100, null=True)),
+                (
+                    "idGroup",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="custom_auth.group",
+                    ),
+                ),
+                (
+                    "idUser",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "idTopic",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="concensus.recommendedtopic",
+                    ),
+                ),
             ],
-            options={'unique_together': {('idGroup', 'idUser', 'idTopic')}},
+            options={"unique_together": {("idGroup", "idUser", "idTopic")}},
         ),
         migrations.CreateModel(
-            name='Message',
+            name="Message",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('text', models.TextField()),
-                ('posture', models.CharField(choices=[('agree', 'De acuerdo'), ('disagree', 'No de acuerdo'), ('neutral', 'Neutral')], default='neutral', max_length=10)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('debate', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='messages', to='concensus.debate')),
-                ('group', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='messages', to='custom_auth.group')),
-                ('parent', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='replies', to='concensus.message')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='messages', to=settings.AUTH_USER_MODEL)),
-            ],
-        ),
-        migrations.CreateModel(
-            name='NotificationPhaseOne',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('notification_type', models.CharField(choices=[('new_topic', 'New Topic'), ('topic_visited', 'Topic Visited'), ('phase_one_completed', 'Phase One Completed'), ('combined_search', 'Combined Search'), ('user_expertise', 'User Expertise')], max_length=50)),
-                ('message', models.TextField()),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('group', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='custom_auth.group')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
-            ],
-        ),
-        migrations.CreateModel(
-            name='NotificationPhaseTwo',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('notification_type', models.CharField(choices=[('topic_reorder', 'Topic Reorder'), ('topic_tag', 'Topic Tag'), ('consensus_finalized', 'Consensus Finalized')], max_length=50)),
-                ('message', models.TextField()),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('group', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='custom_auth.group')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
-            ],
-        ),
-        migrations.CreateModel(
-            name='Reaction',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('message', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='reactions', to='concensus.message')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='reactions', to=settings.AUTH_USER_MODEL)),
-            ],
-            options={'unique_together': {('user', 'message')}},
-        ),
-        migrations.CreateModel(
-            name='Topic',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=100)),
-                ('group', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='custom_auth.group')),
-            ],
-        ),
-        migrations.CreateModel(
-            name='TopicAddedUser',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('added_at', models.DateTimeField(auto_now_add=True)),
-                ('group', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='added_topics', to='custom_auth.group')),
-                ('topic', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='added_by_users', to='concensus.recommendedtopic')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='added_topics', to=settings.AUTH_USER_MODEL)),
-            ],
-        ),
-        migrations.CreateModel(
-            name='UserExpertise',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('expertise_level', models.IntegerField(default=1)),
-                ('has_provided_expertise', models.BooleanField(default=False)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('group', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='custom_auth.group')),
-                ('topic', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='concensus.recommendedtopic')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
-            ],
-            options={'unique_together': {('user', 'group', 'topic')}},
-        ),
-        migrations.CreateModel(
-            name='UserPhase',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('phase', models.IntegerField(default=0)),
-                ('completed_at', models.DateTimeField(blank=True, null=True)),
-                ('group', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='custom_auth.group')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("text", models.TextField()),
+                (
+                    "posture",
+                    models.CharField(
+                        choices=[
+                            ("agree", "De acuerdo"),
+                            ("disagree", "No de acuerdo"),
+                            ("neutral", "Neutral"),
+                        ],
+                        default="neutral",
+                        max_length=10,
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "debate",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="messages",
+                        to="concensus.debate",
+                    ),
+                ),
+                (
+                    "group",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="messages",
+                        to="custom_auth.group",
+                    ),
+                ),
+                (
+                    "parent",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="replies",
+                        to="concensus.message",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="messages",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='UserPosture',
+            name="NotificationPhaseOne",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('posture', models.CharField(choices=[('agree', 'De acuerdo'), ('disagree', 'No de acuerdo'), ('neutral', 'Neutral')], max_length=10)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('debate', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='postures', to='concensus.debate')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='postures', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "notification_type",
+                    models.CharField(
+                        choices=[
+                            ("new_topic", "New Topic"),
+                            ("topic_visited", "Topic Visited"),
+                            ("phase_one_completed", "Phase One Completed"),
+                            ("combined_search", "Combined Search"),
+                            ("user_expertise", "User Expertise"),
+                        ],
+                        max_length=50,
+                    ),
+                ),
+                ("message", models.TextField()),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "group",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="custom_auth.group",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
-            options={'unique_together': {('user', 'debate')}},
         ),
         migrations.CreateModel(
-            name='UserSatisfaction',
+            name="NotificationPhaseTwo",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('satisfaction_level', models.CharField(choices=[('Unsatisfied', 'Unsatisfied'), ('Slightly Unsatisfied', 'Slightly Unsatisfied'), ('Neutral', 'Neutral'), ('Slightly Satisfied', 'Slightly Satisfied'), ('Satisfied', 'Satisfied')], max_length=20)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('message', models.TextField()),
-                ('group', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='custom_auth.group')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "notification_type",
+                    models.CharField(
+                        choices=[
+                            ("topic_reorder", "Topic Reorder"),
+                            ("topic_tag", "Topic Tag"),
+                            ("consensus_finalized", "Consensus Finalized"),
+                        ],
+                        max_length=50,
+                    ),
+                ),
+                ("message", models.TextField()),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "group",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="custom_auth.group",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
-            options={'unique_together': {('user', 'group')}},
+        ),
+        migrations.CreateModel(
+            name="Reaction",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "message",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="reactions",
+                        to="concensus.message",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="reactions",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+            ],
+            options={"unique_together": {("user", "message")}},
+        ),
+        migrations.CreateModel(
+            name="Topic",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=100)),
+                (
+                    "group",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="custom_auth.group",
+                    ),
+                ),
+            ],
+        ),
+        migrations.CreateModel(
+            name="TopicAddedUser",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("added_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "group",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="added_topics",
+                        to="custom_auth.group",
+                    ),
+                ),
+                (
+                    "topic",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="added_by_users",
+                        to="concensus.recommendedtopic",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="added_topics",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+            ],
+        ),
+        migrations.CreateModel(
+            name="UserExpertise",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("expertise_level", models.IntegerField(default=1)),
+                ("has_provided_expertise", models.BooleanField(default=False)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "group",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="custom_auth.group",
+                    ),
+                ),
+                (
+                    "topic",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="concensus.recommendedtopic",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+            ],
+            options={"unique_together": {("user", "group", "topic")}},
+        ),
+        migrations.CreateModel(
+            name="UserPhase",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("phase", models.IntegerField(default=0)),
+                ("completed_at", models.DateTimeField(blank=True, null=True)),
+                (
+                    "group",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="custom_auth.group",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+            ],
+        ),
+        migrations.CreateModel(
+            name="UserPosture",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "posture",
+                    models.CharField(
+                        choices=[
+                            ("agree", "De acuerdo"),
+                            ("disagree", "No de acuerdo"),
+                            ("neutral", "Neutral"),
+                        ],
+                        max_length=10,
+                    ),
+                ),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "debate",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="postures",
+                        to="concensus.debate",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="postures",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+            ],
+            options={"unique_together": {("user", "debate")}},
+        ),
+        migrations.CreateModel(
+            name="UserSatisfaction",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "satisfaction_level",
+                    models.CharField(
+                        choices=[
+                            ("Unsatisfied", "Unsatisfied"),
+                            ("Slightly Unsatisfied", "Slightly Unsatisfied"),
+                            ("Neutral", "Neutral"),
+                            ("Slightly Satisfied", "Slightly Satisfied"),
+                            ("Satisfied", "Satisfied"),
+                        ],
+                        max_length=20,
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("message", models.TextField()),
+                (
+                    "group",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="custom_auth.group",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+            ],
+            options={"unique_together": {("user", "group")}},
         ),
     ]

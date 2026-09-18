@@ -1,10 +1,16 @@
 from django.db import models
+
 from apps.concensus.domain.entities.debate import Debate
-from apps.custom_auth.identity_principal import ref_from_snapshot, snapshot_from_principal
+from apps.custom_auth.identity_principal import (
+    ref_from_snapshot,
+    snapshot_from_principal,
+)
 
 
 class DebateParticipant(models.Model):
-    debate = models.ForeignKey(Debate, on_delete=models.CASCADE, related_name='participants')
+    debate = models.ForeignKey(
+        Debate, on_delete=models.CASCADE, related_name="participants"
+    )
     participant_identity_id = models.CharField(max_length=64, db_index=True)
     participant_snapshot = models.JSONField(default=dict, blank=True)
     joined_at = models.DateTimeField(auto_now_add=True)
@@ -12,7 +18,9 @@ class DebateParticipant(models.Model):
 
     @property
     def participant(self):
-        return ref_from_snapshot(self.participant_identity_id, self.participant_snapshot)
+        return ref_from_snapshot(
+            self.participant_identity_id, self.participant_snapshot
+        )
 
     @participant.setter
     def participant(self, value):
@@ -21,5 +29,6 @@ class DebateParticipant(models.Model):
 
     def __str__(self):
         return f"{self.participant.username} in debate {self.debate.title}"
+
     class Meta:
-        db_table = 'debate_participants'
+        db_table = "debate_participants"

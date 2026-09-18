@@ -1,7 +1,0 @@
-from apps.custom_auth.infrastructure.api.v1.serializers.user_serializer import RetiredIdentitySerializer
-
-
-GroupSerializer = RetiredIdentitySerializer
-UserGroupSerializer = RetiredIdentitySerializer
-UserDetailSerializer = RetiredIdentitySerializer
-GroupDetailSerializer = RetiredIdentitySerializer

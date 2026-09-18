@@ -6,9 +6,8 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('custom_auth', '0002_magiclink'),
-        ('custom_auth', '0003_magiclink'),
+        ("custom_auth", "0002_magiclink"),
+        ("custom_auth", "0003_magiclink"),
     ]
 
-    operations = [
-    ]
+    operations = []

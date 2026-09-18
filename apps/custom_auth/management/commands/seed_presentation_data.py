@@ -2,7 +2,10 @@ from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
-    help = "Comando retirado: la semilla de investigadores pertenece a profile_identity_backend."
+    help = (
+        "Comando retirado: la semilla de investigadores pertenece a "
+        "profile_identity_backend."
+    )
 
     def handle(self, *args, **options):
         self.stdout.write(

@@ -1,7 +1,11 @@
 from django.db import models
 
 from apps.concensus.domain.entities.topic import RecommendedTopic
-from apps.custom_auth.identity_principal import group_ref_from_snapshot, group_snapshot_from_principal
+from apps.custom_auth.identity_principal import (
+    group_ref_from_snapshot,
+    group_snapshot_from_principal,
+)
+
 
 class ConsensusResult(models.Model):
     idGroup_identity_id = models.CharField(max_length=64, db_index=True)
@@ -18,4 +22,5 @@ class ConsensusResult(models.Model):
         self.idGroup_identity_id = str(value.id)
         self.idGroup_snapshot = group_snapshot_from_principal(value)
 
-#select * from concensus_consensusresult;
+
+# select * from concensus_consensusresult;

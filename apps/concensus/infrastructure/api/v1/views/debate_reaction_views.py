@@ -3,21 +3,23 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.concensus.domain.entities.debate_reaction import Reaction
-from apps.concensus.infrastructure.api.v1.serializers.debate_reaction_serializer import ReactionSerializer
+from apps.concensus.infrastructure.api.v1.serializers.debate_reaction_serializer import (
+    ReactionSerializer,
+)
 from apps.custom_auth.identity_principal import snapshot_from_principal
 
 
-class ReactionViewSet(mixins.CreateModelMixin,
-                      mixins.DestroyModelMixin,
-                      viewsets.GenericViewSet):
+class ReactionViewSet(
+    mixins.CreateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet
+):
     queryset = Reaction.objects.all()
     serializer_class = ReactionSerializer
     permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
         data = request.data.copy()
-        data['user_identity_id'] = str(request.user.id)
-        data['user_snapshot'] = snapshot_from_principal(request.user)
+        data["user_identity_id"] = str(request.user.id)
+        data["user_snapshot"] = snapshot_from_principal(request.user)
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)

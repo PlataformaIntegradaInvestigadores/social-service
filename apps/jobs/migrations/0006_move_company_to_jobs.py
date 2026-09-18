@@ -1,6 +1,7 @@
-import apps.jobs.domain.entities.company
 import django.db.models.deletion
 from django.db import migrations, models
+
+import apps.jobs.domain.entities.company
 
 
 class Migration(migrations.Migration):
@@ -48,7 +49,12 @@ class Migration(migrations.Migration):
                 migrations.CreateModel(
                     name="Company",
                     fields=[
-                        ("last_login", models.DateTimeField(blank=True, null=True, verbose_name="last login")),
+                        (
+                            "last_login",
+                            models.DateTimeField(
+                                blank=True, null=True, verbose_name="last login"
+                            ),
+                        ),
                         (
                             "is_superuser",
                             models.BooleanField(
@@ -67,8 +73,20 @@ class Migration(migrations.Migration):
                                 serialize=False,
                             ),
                         ),
-                        ("company_name", models.CharField(max_length=200, verbose_name="Nombre de la empresa")),
-                        ("username", models.EmailField(max_length=254, unique=True, verbose_name="Correo electronico")),
+                        (
+                            "company_name",
+                            models.CharField(
+                                max_length=200, verbose_name="Nombre de la empresa"
+                            ),
+                        ),
+                        (
+                            "username",
+                            models.EmailField(
+                                max_length=254,
+                                unique=True,
+                                verbose_name="Correo electronico",
+                            ),
+                        ),
                         ("password", models.CharField(max_length=128)),
                         (
                             "industry",
@@ -96,10 +114,34 @@ class Migration(migrations.Migration):
                                 verbose_name="Industria",
                             ),
                         ),
-                        ("description", models.TextField(blank=True, max_length=1000, null=True, verbose_name="Descripcion")),
+                        (
+                            "description",
+                            models.TextField(
+                                blank=True,
+                                max_length=1000,
+                                null=True,
+                                verbose_name="Descripcion",
+                            ),
+                        ),
                         ("website", models.URLField(blank=True, null=True)),
-                        ("phone", models.CharField(blank=True, max_length=20, null=True, verbose_name="Telefono")),
-                        ("address", models.CharField(blank=True, max_length=300, null=True, verbose_name="Direccion")),
+                        (
+                            "phone",
+                            models.CharField(
+                                blank=True,
+                                max_length=20,
+                                null=True,
+                                verbose_name="Telefono",
+                            ),
+                        ),
+                        (
+                            "address",
+                            models.CharField(
+                                blank=True,
+                                max_length=300,
+                                null=True,
+                                verbose_name="Direccion",
+                            ),
+                        ),
                         (
                             "logo",
                             models.ImageField(
@@ -110,7 +152,12 @@ class Migration(migrations.Migration):
                                 verbose_name="Logo",
                             ),
                         ),
-                        ("founded_year", models.IntegerField(blank=True, null=True, verbose_name="Anio de fundacion")),
+                        (
+                            "founded_year",
+                            models.IntegerField(
+                                blank=True, null=True, verbose_name="Anio de fundacion"
+                            ),
+                        ),
                         (
                             "employee_count",
                             models.CharField(
@@ -131,7 +178,12 @@ class Migration(migrations.Migration):
                         ("is_active", models.BooleanField(default=True)),
                         ("is_staff", models.BooleanField(default=False)),
                         ("date_joined", models.DateTimeField(auto_now_add=True)),
-                        ("is_verified", models.BooleanField(default=False, verbose_name="Empresa verificada")),
+                        (
+                            "is_verified",
+                            models.BooleanField(
+                                default=False, verbose_name="Empresa verificada"
+                            ),
+                        ),
                         (
                             "groups",
                             models.ManyToManyField(

@@ -1,6 +1,11 @@
 from django.db import models
 from django.utils.timezone import now
-from apps.custom_auth.identity_principal import group_ref_from_snapshot, group_snapshot_from_principal
+
+from apps.custom_auth.identity_principal import (
+    group_ref_from_snapshot,
+    group_snapshot_from_principal,
+)
+
 
 class Debate(models.Model):
     group_identity_id = models.CharField(max_length=64, db_index=True)
@@ -10,8 +15,6 @@ class Debate(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     end_time = models.DurationField()
     is_closed = models.BooleanField(default=False)
-
-
 
     def __str__(self):
         return f"{self.title} - {self.group.title}"
@@ -26,9 +29,7 @@ class Debate(models.Model):
         self.group_snapshot = group_snapshot_from_principal(value)
 
     class Meta:
-         db_table = 'debates'
-
-
+        db_table = "debates"
 
     def is_time_exceeded(self):
         """

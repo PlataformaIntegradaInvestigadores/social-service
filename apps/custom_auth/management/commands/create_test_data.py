@@ -2,7 +2,10 @@ from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
-    help = "Comando retirado: no se crean investigadores locales en social_consensus_backend."
+    help = (
+        "Comando retirado: no se crean investigadores locales en "
+        "social_consensus_backend."
+    )
 
     def handle(self, *args, **options):
         self.stdout.write(

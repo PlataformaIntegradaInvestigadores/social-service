@@ -7,13 +7,15 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('feeds', '0004_auto_20250702_0223'),
+        ("feeds", "0004_auto_20250702_0223"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddIndex(
-            model_name='feedpost',
-            index=models.Index(fields=['-engagement_score', '-created_at'], name='trending_idx'),
+            model_name="feedpost",
+            index=models.Index(
+                fields=["-engagement_score", "-created_at"], name="trending_idx"
+            ),
         ),
     ]

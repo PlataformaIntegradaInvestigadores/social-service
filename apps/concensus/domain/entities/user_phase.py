@@ -1,5 +1,5 @@
-
 from django.db import models
+
 from apps.custom_auth.identity_principal import (
     group_ref_from_snapshot,
     group_snapshot_from_principal,
@@ -34,4 +34,5 @@ class UserPhase(models.Model):
         self.group_identity_id = str(value.id)
         self.group_snapshot = group_snapshot_from_principal(value)
 
-#select * from "concensus_userphase";
+
+# select * from "concensus_userphase";

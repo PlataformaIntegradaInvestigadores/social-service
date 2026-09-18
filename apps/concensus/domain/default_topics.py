@@ -1,0 +1,26 @@
+"""Catálogo de respaldo para iniciar la fase de recomendaciones de un grupo."""
+
+DEFAULT_RECOMMENDED_TOPICS: tuple[str, ...] = (
+    "Artificial Intelligence",
+    "Machine Learning",
+    "Computer Vision",
+    "Natural Language Processing",
+    "Robotics",
+    "Data Science",
+    "Bioinformatics",
+    "Quantum Computing",
+    "Cybersecurity",
+    "Blockchain",
+    "Internet of Things",
+    "Cloud Computing",
+    "Software Engineering",
+    "Human-Computer Interaction",
+    "Database Systems",
+    "Computer Networks",
+    "Distributed Systems",
+    "Computer Graphics",
+    "Algorithms",
+    "Computational Biology",
+    "Digital Health",
+    "Smart Cities",
+)

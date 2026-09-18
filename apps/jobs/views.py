@@ -1,6 +1,0 @@
-from apps.concensus.infrastructure.api.v1.views.topic_views import TopicViewSet, RandomRecommendedTopicView, RecommendedTopicsByGroupView, TopicsAddedByGroupView, GroupTopicsView
-from apps.concensus.infrastructure.api.v1.views.notification_views import NotificationPhaseOne
-from apps.concensus.infrastructure.api.v1.views.final_topic_views import SaveFinalTopicOrderView
-from apps.concensus.infrastructure.api.v1.views.result_concensus_views import ExecuteConsensusCalculationsView
-from apps.concensus.infrastructure.api.v1.views.user_satisfaction_views import UserSatisfactionView, LoadSatisfactionCountsView, LoadUserSatisfactionNotificationsView
-from apps.concensus.infrastructure.api.v1.views.user_phase_views import UserCurrentPhaseView

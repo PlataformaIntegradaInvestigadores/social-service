@@ -21,7 +21,9 @@ def normalize_profile_picture(value):
 def merge_identity_snapshot(base_snapshot, identity_payload):
     snapshot = dict(base_snapshot or {})
     if not identity_payload:
-        snapshot["profile_picture"] = normalize_profile_picture(snapshot.get("profile_picture"))
+        snapshot["profile_picture"] = normalize_profile_picture(
+            snapshot.get("profile_picture")
+        )
         return snapshot
 
     for field in (
@@ -53,7 +55,9 @@ def get_identity_user_snapshot(user_id, authorization_header="", cache=None):
     if cache is not None and cache_key in cache:
         return cache[cache_key]
 
-    base_url = getattr(settings, "PROFILE_IDENTITY_BASE_URL", "http://profile-identity-web:8002")
+    base_url = getattr(
+        settings, "PROFILE_IDENTITY_BASE_URL", "http://identity-service:8002"
+    )
     url = urljoin(base_url.rstrip("/") + "/", f"api/users/{user_id}/")
     headers = {}
     if authorization_header:
@@ -78,7 +82,9 @@ def get_identity_group_detail(group_id, authorization_header=""):
     if not group_id:
         return None
 
-    base_url = getattr(settings, "PROFILE_IDENTITY_BASE_URL", "http://profile-identity-web:8002")
+    base_url = getattr(
+        settings, "PROFILE_IDENTITY_BASE_URL", "http://identity-service:8002"
+    )
     url = urljoin(base_url.rstrip("/") + "/", f"api/groups/{group_id}/")
     headers = {}
     if authorization_header:

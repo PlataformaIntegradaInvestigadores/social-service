@@ -49,32 +49,53 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="feedpost",
             name="author_identity_id",
-            field=models.CharField(db_index=True, max_length=64, null=True, verbose_name="ID externo del autor"),
+            field=models.CharField(
+                db_index=True,
+                max_length=64,
+                null=True,
+                verbose_name="ID externo del autor",
+            ),
         ),
         migrations.AddField(
             model_name="feedpost",
             name="author_snapshot",
-            field=models.JSONField(blank=True, default=dict, verbose_name="Snapshot del autor"),
+            field=models.JSONField(
+                blank=True, default=dict, verbose_name="Snapshot del autor"
+            ),
         ),
         migrations.AddField(
             model_name="comment",
             name="author_identity_id",
-            field=models.CharField(db_index=True, max_length=64, null=True, verbose_name="ID externo del autor"),
+            field=models.CharField(
+                db_index=True,
+                max_length=64,
+                null=True,
+                verbose_name="ID externo del autor",
+            ),
         ),
         migrations.AddField(
             model_name="comment",
             name="author_snapshot",
-            field=models.JSONField(blank=True, default=dict, verbose_name="Snapshot del autor"),
+            field=models.JSONField(
+                blank=True, default=dict, verbose_name="Snapshot del autor"
+            ),
         ),
         migrations.AddField(
             model_name="like",
             name="user_identity_id",
-            field=models.CharField(db_index=True, max_length=64, null=True, verbose_name="ID externo del usuario"),
+            field=models.CharField(
+                db_index=True,
+                max_length=64,
+                null=True,
+                verbose_name="ID externo del usuario",
+            ),
         ),
         migrations.AddField(
             model_name="like",
             name="user_snapshot",
-            field=models.JSONField(blank=True, default=dict, verbose_name="Snapshot del usuario"),
+            field=models.JSONField(
+                blank=True, default=dict, verbose_name="Snapshot del usuario"
+            ),
         ),
         migrations.AddField(
             model_name="pollvote",
@@ -126,17 +147,23 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="feedpost",
             name="author_identity_id",
-            field=models.CharField(db_index=True, max_length=64, verbose_name="ID externo del autor"),
+            field=models.CharField(
+                db_index=True, max_length=64, verbose_name="ID externo del autor"
+            ),
         ),
         migrations.AlterField(
             model_name="comment",
             name="author_identity_id",
-            field=models.CharField(db_index=True, max_length=64, verbose_name="ID externo del autor"),
+            field=models.CharField(
+                db_index=True, max_length=64, verbose_name="ID externo del autor"
+            ),
         ),
         migrations.AlterField(
             model_name="like",
             name="user_identity_id",
-            field=models.CharField(db_index=True, max_length=64, verbose_name="ID externo del usuario"),
+            field=models.CharField(
+                db_index=True, max_length=64, verbose_name="ID externo del usuario"
+            ),
         ),
         migrations.AlterField(
             model_name="pollvote",
@@ -145,14 +172,23 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="feedpost",
-            index=models.Index(fields=["author_identity_id", "-created_at"], name="feeds_feedp_auth_ident_idx"),
+            index=models.Index(
+                fields=["author_identity_id", "-created_at"],
+                name="feeds_feedp_auth_ident_idx",
+            ),
         ),
         migrations.AddIndex(
             model_name="comment",
-            index=models.Index(fields=["author_identity_id", "-created_at"], name="feeds_comme_auth_ident_idx"),
+            index=models.Index(
+                fields=["author_identity_id", "-created_at"],
+                name="feeds_comme_auth_ident_idx",
+            ),
         ),
         migrations.AddIndex(
             model_name="like",
-            index=models.Index(fields=["user_identity_id", "-created_at"], name="feeds_like_user_identity_idx"),
+            index=models.Index(
+                fields=["user_identity_id", "-created_at"],
+                name="feeds_like_user_identity_idx",
+            ),
         ),
     ]

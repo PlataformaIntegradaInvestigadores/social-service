@@ -12,10 +12,12 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-    help = 'Valida metricas funcionales y de rendimiento (CRUD < 1.2s, Feed < 1.8s)'
+    help = "Valida metricas funcionales y de rendimiento (CRUD < 1.2s, Feed < 1.8s)"
 
     def handle(self, *args, **options):
-        self.stdout.write(self.style.SUCCESS('Iniciando validacion funcional y de rendimiento...'))
+        self.stdout.write(
+            self.style.SUCCESS("Iniciando validacion funcional y de rendimiento...")
+        )
 
         user = IdentityPrincipal(
             id=f"test_perf_{uuid.uuid4().hex[:8]}",
@@ -34,10 +36,17 @@ class Command(BaseCommand):
             for i in range(25):
                 start_time = time.perf_counter()
 
-                content = f"Benchmark post iteracion {i}: Analisis de rendimiento en sistemas distribuidos."
-                post = feed_service.create_post(author=user, content=content, is_public=True)
+                content = (
+                    f"Benchmark post iteracion {i}: Analisis de rendimiento "
+                    f"en sistemas distribuidos."
+                )
+                post = feed_service.create_post(
+                    author=user, content=content, is_public=True
+                )
                 feed_service.toggle_like(user, post)
-                feed_service.create_comment(user.id, post.id, "Interesante punto de vista.")
+                feed_service.create_comment(
+                    user.id, post.id, "Interesante punto de vista."
+                )
 
                 duration = time.perf_counter() - start_time
                 metrics["CRUD"].append(duration)
@@ -46,14 +55,18 @@ class Command(BaseCommand):
 
                 self.stdout.write(f"  Iteracion {i + 1}: {duration:.4f}s")
 
-            self.stdout.write("\n--- Ejecutando pruebas feed personalizado (25 casos) ---")
+            self.stdout.write(
+                "\n--- Ejecutando pruebas feed personalizado (25 casos) ---"
+            )
             for i in range(25):
                 start_time = time.perf_counter()
                 feed, _, _ = feed_service.get_personalized_feed(user=user, limit=10)
                 duration = time.perf_counter() - start_time
 
                 metrics["FEED"].append(duration)
-                self.stdout.write(f"  Iteracion {i + 1}: {duration:.4f}s (Items: {len(feed)})")
+                self.stdout.write(
+                    f"  Iteracion {i + 1}: {duration:.4f}s (Items: {len(feed)})"
+                )
 
             self.print_report(metrics)
 
@@ -68,7 +81,7 @@ class Command(BaseCommand):
             self.stdout.write("Limpieza completada.")
 
     def print_report(self, metrics):
-        report_path = 'apps/feeds/docs/functional_validation_results_2026_01_11.md'
+        report_path = "apps/feeds/docs/functional_validation_results_2026_01_11.md"
 
         crud_avg = sum(metrics["CRUD"]) / len(metrics["CRUD"])
         crud_target = 1.2
@@ -80,10 +93,13 @@ class Command(BaseCommand):
         feed_passed = feed_avg < feed_target
         feed_status = "PASSED" if feed_passed else "FAILED"
 
-        with open(report_path, 'w', encoding='utf-8') as f:
+        with open(report_path, "w", encoding="utf-8") as f:
             f.write("# Validacion Funcional y de Rendimiento\n\n")
             f.write("**Fecha:** 11 de Enero de 2026\n")
-            f.write("**Objetivo**: Validar tiempos de respuesta de operaciones criticas.\n\n")
+            f.write(
+                "**Objetivo**: Validar tiempos de respuesta de "
+                "operaciones criticas.\n\n"
+            )
 
             f.write("## 1. Operaciones CRUD (Create + Like + Comment)\n")
             f.write(f"- **Promedio**: {crud_avg:.4f}s\n")
@@ -96,7 +112,10 @@ class Command(BaseCommand):
             f.write(f"- **Estado**: {feed_status}\n\n")
 
             if crud_passed and feed_passed:
-                f.write("## Conclusion\n**EL SISTEMA CUMPLE LOS REQUISITOS DE RENDIMIENTO.**\n")
+                f.write(
+                    "## Conclusion\n**EL SISTEMA CUMPLE LOS REQUISITOS "
+                    "DE RENDIMIENTO.**\n"
+                )
             else:
                 f.write("## Conclusion\n**ALGUNOS REQUISITOS NO SE CUMPLIERON.**\n")
 

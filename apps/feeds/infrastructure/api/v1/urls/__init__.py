@@ -1,7 +1,7 @@
-from .feed_post_urls import urlpatterns as post_patterns
 from .comment_urls import urlpatterns as comment_patterns
-from .like_urls import urlpatterns as like_patterns
+from .feed_post_urls import urlpatterns as post_patterns
 from .feed_urls import urlpatterns as feed_patterns
+from .like_urls import urlpatterns as like_patterns
 from .poll_urls import urlpatterns as poll_patterns
 
 urlpatterns = []

@@ -2,7 +2,11 @@ import random
 import string
 import uuid
 
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.models import (
+    AbstractBaseUser,
+    BaseUserManager,
+    PermissionsMixin,
+)
 from django.db import models
 
 
@@ -58,15 +62,28 @@ class Company(AbstractBaseUser, PermissionsMixin):
         ("other", "Otro"),
     ]
 
-    id = models.CharField(max_length=10, primary_key=True, default=generate_unique_id, editable=False)
+    id = models.CharField(
+        max_length=10, primary_key=True, default=generate_unique_id, editable=False
+    )
     company_name = models.CharField(max_length=200, verbose_name="Nombre de la empresa")
     username = models.EmailField(unique=True, verbose_name="Correo electronico")
     password = models.CharField(max_length=128)
-    industry = models.CharField(max_length=20, choices=INDUSTRY_CHOICES, default="other", verbose_name="Industria")
-    description = models.TextField(max_length=1000, null=True, blank=True, verbose_name="Descripcion")
+    industry = models.CharField(
+        max_length=20,
+        choices=INDUSTRY_CHOICES,
+        default="other",
+        verbose_name="Industria",
+    )
+    description = models.TextField(
+        max_length=1000, null=True, blank=True, verbose_name="Descripcion"
+    )
     website = models.URLField(max_length=200, null=True, blank=True)
-    phone = models.CharField(max_length=20, null=True, blank=True, verbose_name="Telefono")
-    address = models.CharField(max_length=300, null=True, blank=True, verbose_name="Direccion")
+    phone = models.CharField(
+        max_length=20, null=True, blank=True, verbose_name="Telefono"
+    )
+    address = models.CharField(
+        max_length=300, null=True, blank=True, verbose_name="Direccion"
+    )
     logo = models.ImageField(
         upload_to=get_company_logo_filepath,
         default="company_logos/default_company_logo.png",
@@ -74,7 +91,9 @@ class Company(AbstractBaseUser, PermissionsMixin):
         blank=True,
         verbose_name="Logo",
     )
-    founded_year = models.IntegerField(null=True, blank=True, verbose_name="Anio de fundacion")
+    founded_year = models.IntegerField(
+        null=True, blank=True, verbose_name="Anio de fundacion"
+    )
     employee_count = models.CharField(
         max_length=20,
         choices=[

@@ -30,12 +30,19 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="postulants",
             name="user_identity_id",
-            field=models.CharField(db_index=True, max_length=64, null=True, verbose_name="ID externo del usuario"),
+            field=models.CharField(
+                db_index=True,
+                max_length=64,
+                null=True,
+                verbose_name="ID externo del usuario",
+            ),
         ),
         migrations.AddField(
             model_name="postulants",
             name="user_snapshot",
-            field=models.JSONField(blank=True, default=dict, verbose_name="Snapshot del usuario"),
+            field=models.JSONField(
+                blank=True, default=dict, verbose_name="Snapshot del usuario"
+            ),
         ),
         migrations.RunPython(copy_identity_refs, migrations.RunPython.noop),
         migrations.AlterUniqueTogether(
@@ -49,6 +56,8 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="postulants",
             name="user_identity_id",
-            field=models.CharField(db_index=True, max_length=64, verbose_name="ID externo del usuario"),
+            field=models.CharField(
+                db_index=True, max_length=64, verbose_name="ID externo del usuario"
+            ),
         ),
     ]

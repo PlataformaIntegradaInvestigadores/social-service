@@ -1,20 +1,22 @@
-from channels.generic.websocket import AsyncWebsocketConsumer
+import json
+
 from asgiref.sync import sync_to_async
+from channels.generic.websocket import AsyncWebsocketConsumer
 from django.core.cache import cache
 
 from apps.concensus.domain.entities.debate import Debate
 from apps.concensus.domain.entities.debate_message import Message
 from apps.custom_auth.identity_principal import snapshot_from_principal
-import json
+
 
 class ChatConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
-        self.group_id = self.scope['url_route']['kwargs']['group_id']
-        self.debate_id = self.scope['url_route']['kwargs']['debate_id']
+        self.group_id = self.scope["url_route"]["kwargs"]["group_id"]
+        self.debate_id = self.scope["url_route"]["kwargs"]["debate_id"]
         self.room_group_name = f"chat_{self.group_id}_{self.debate_id}"
 
-        if not self.scope['user'].is_authenticated:
+        if not self.scope["user"].is_authenticated:
             await self.close(code=403)
             return
 
@@ -25,13 +27,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         # Agregar usuario a Redis
         connected_users = cache.get(f"chat_users_{self.debate_id}", set())
-        connected_users.add(self.scope['user'].id)
+        connected_users.add(self.scope["user"].id)
         cache.set(f"chat_users_{self.debate_id}", connected_users)
 
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
+        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
 
         # Enviar mensajes iniciales si es necesario
@@ -39,22 +38,19 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
         connected_users = cache.get(f"chat_users_{self.debate_id}", set())
-        connected_users.discard(self.scope['user'].id)
+        connected_users.discard(self.scope["user"].id)
         cache.set(f"chat_users_{self.debate_id}", connected_users)
 
-        await self.channel_layer.group_discard(
-            self.room_group_name,
-            self.channel_name
-        )
+        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
     async def receive(self, text_data):
         data = json.loads(text_data)
-        user = self.scope['user']
+        user = self.scope["user"]
         group_id = self.group_id
         debate_id = self.debate_id
-        message_text = data['text']
-        posture = data.get('posture', 'neutral')
-        parent_id = data.get('parent')
+        message_text = data["text"]
+        posture = data.get("posture", "neutral")
+        parent_id = data.get("parent")
 
         parent = None
         if parent_id:
@@ -64,30 +60,30 @@ class ChatConsumer(AsyncWebsocketConsumer):
             user_identity_id=str(user.id),
             user_snapshot=snapshot_from_principal(user),
             group_identity_id=str(group_id),
-            group_snapshot={'id': str(group_id)},
+            group_snapshot={"id": str(group_id)},
             debate_id=debate_id,
             text=message_text,
             posture=posture,
-            parent=parent
+            parent=parent,
         )
 
         await self.channel_layer.group_send(
             self.room_group_name,
             {
-                'type': 'chat_message',
-                'message': {
-                    'id': message.id,
-                    'user': user.username,
-                    'text': message_text,
-                    'posture': posture,
-                    'parent': parent_id,
-                    'created_at': message.created_at.isoformat()
-                }
-            }
+                "type": "chat_message",
+                "message": {
+                    "id": message.id,
+                    "user": user.username,
+                    "text": message_text,
+                    "posture": posture,
+                    "parent": parent_id,
+                    "created_at": message.created_at.isoformat(),
+                },
+            },
         )
 
     async def chat_message(self, event):
-        await self.send(text_data=json.dumps(event['message']))
+        await self.send(text_data=json.dumps(event["message"]))
 
     @sync_to_async
     def get_debate(self, debate_id):
@@ -104,7 +100,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
         first_message = f"I want to understand {debate.title} better, how do you see it, do you have experience or knowledge that you can contribute?"
         second_message = debate.description
 
-        return Message.objects.filter(debate_id=debate.id, text__in=[first_message, second_message]).exists()
+        return Message.objects.filter(
+            debate_id=debate.id, text__in=[first_message, second_message]
+        ).exists()
 
     async def send_initial_messages(self, debate):
         """
@@ -119,26 +117,26 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         for text in [first_message, second_message]:
             message = await sync_to_async(Message.objects.create)(
-                user_identity_id=str(self.scope['user'].id),
-                user_snapshot=snapshot_from_principal(self.scope['user']),
+                user_identity_id=str(self.scope["user"].id),
+                user_snapshot=snapshot_from_principal(self.scope["user"]),
                 group_identity_id=str(self.group_id),
-                group_snapshot={'id': str(self.group_id)},
+                group_snapshot={"id": str(self.group_id)},
                 debate_id=self.debate_id,
                 text=text,
-                posture='neutral'
+                posture="neutral",
             )
 
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
-                    'type': 'chat_message',
-                    'message': {
-                        'id': message.id,
-                        'user': self.scope['user'].username,
-                        'text': text,
-                        'posture': 'neutral',
-                        'parent': None,
-                        'created_at': message.created_at.isoformat()
-                    }
-                }
+                    "type": "chat_message",
+                    "message": {
+                        "id": message.id,
+                        "user": self.scope["user"].username,
+                        "text": text,
+                        "posture": "neutral",
+                        "parent": None,
+                        "created_at": message.created_at.isoformat(),
+                    },
+                },
             )

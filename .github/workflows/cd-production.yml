@@ -17,50 +17,10 @@ env:
   DJANGO_SETTINGS_MODULE: project.settings
 
 jobs:
-  # ── Unitarios ────────────────────────────────────────────────────────────
-  test-unit:
-    name: Pruebas unitarias
+  # ── Tests ──────────────────────────────────────────────────────────────────
+  test:
+    name: Pruebas unitarias e integración
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: pgvector/pgvector:pg16
-        env:
-          POSTGRES_DB: centinela_test
-          POSTGRES_USER: centinela
-          POSTGRES_PASSWORD: testpass123
-        ports: ["5432:5432"]
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: pip
-      - name: Instalar dependencias
-        run: pip install -q -r requirements.txt pytest pytest-django pytest-cov
-      - name: Ejecutar tests unitarios
-        run: |
-          pytest apps/ -v --tb=short \
-            --junitxml=report-unit-prod.xml \
-            --cov=apps --cov-report=term --cov-report=xml:coverage-unit-prod.xml
-      - name: Subir resultados
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: unit-test-results-prod
-          path: |
-            report-unit-prod.xml
-            coverage-unit-prod.xml
-
-  # ── Integración ────────────────────────────────────────────────────────────
-  test-integration:
-    name: Pruebas de integración
-    runs-on: ubuntu-latest
-    needs: test-unit
     services:
       postgres:
         image: pgvector/pgvector:pg16
@@ -79,24 +39,31 @@ jobs:
         ports: ["6379:6379"]
         options: --health-cmd "redis-cli ping" --health-interval 10s --health-retries 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
       - name: Instalar dependencias
         run: pip install -q -r requirements.txt pytest pytest-django pytest-cov
+      - name: Ejecutar tests unitarios
+        run: |
+          pytest apps/ -v --tb=short \
+            --junitxml=report-unit-prod.xml \
+            --cov=apps --cov-report=term --cov-report=xml:coverage-unit-prod.xml
       - name: Ejecutar tests de integración
         run: |
           pytest apps/ -v --tb=short -m integration \
             --junitxml=report-integration-prod.xml \
             --cov=apps --cov-report=term --cov-report=xml:coverage-integration-prod.xml
       - name: Subir resultados
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: integration-test-results-prod
+          name: test-results-prod
           path: |
+            report-unit-prod.xml
+            coverage-unit-prod.xml
             report-integration-prod.xml
             coverage-integration-prod.xml
 
@@ -104,23 +71,23 @@ jobs:
   deploy-production:
     name: Deploy a servidor producción
     runs-on: [self-hosted, production]
-    needs: test-integration
+    needs: test
     steps:
       - name: Actualizar código
         run: |
-          cd /opt/centinela/social_consensus_backend
+          cd /opt/centinela/social-service
           git fetch origin main
           git reset --hard origin/main
 
       - name: Reconstruir contenedor
         run: |
           cd /opt/centinela
-          docker compose up -d --build --no-deps social-web
+          docker compose up -d --build --no-deps social-service
 
       - name: Ejecutar migraciones
         run: |
           sleep 10
-          docker exec centinela-social-web-1 python manage.py migrate --no-input 2>&1 \
+          docker exec centinela-social-service-1 python manage.py migrate --no-input 2>&1 \
             || echo "⚠️ Migraciones con errores — revisar custom_auth en main"
 
       - name: Health check con rollback automático
@@ -128,17 +95,17 @@ jobs:
           sleep 15
           HEALTHY=false
           for i in 1 2 3 4 5; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 http://localhost:8000/api/v1/ || echo "000")
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 5 http://localhost:8000/health/ || echo "000")
             echo "Intento $i: HTTP $STATUS"
-            if [ "$STATUS" = "200" ] || [ "$STATUS" = "301" ] || [ "$STATUS" = "404" ]; then
+            if [ "$STATUS" = "200" ]; then
               HEALTHY=true; break
             fi
             sleep 6
           done
           if [ "$HEALTHY" = "false" ]; then
             echo "Health check fallido — rollback al commit anterior"
-            cd /opt/centinela/social_consensus_backend && git reset --hard HEAD~1
-            cd /opt/centinela && docker compose up -d --build --no-deps social-web
+            cd /opt/centinela/social-service && git reset --hard HEAD~1
+            cd /opt/centinela && docker compose up -d --build --no-deps social-service
             exit 1
           fi
           echo "Deploy exitoso — social_consensus_backend en producción"

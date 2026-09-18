@@ -8,24 +8,32 @@ from apps.custom_auth.identity_principal import (
     snapshot_from_principal,
 )
 
+
 class Message(models.Model):
     """
     Representa un mensaje dentro del chat grupal de un debate.
     """
+
     POSTURES = (
-        ('agree', 'De acuerdo'),
-        ('disagree', 'No de acuerdo'),
-        ('neutral', 'Neutral')
+        ("agree", "De acuerdo"),
+        ("disagree", "No de acuerdo"),
+        ("neutral", "Neutral"),
     )
 
     user_identity_id = models.CharField(max_length=64, db_index=True)
     user_snapshot = models.JSONField(default=dict, blank=True)
-    group_identity_id = models.CharField(max_length=64, db_index=True, null=True, blank=True)
+    group_identity_id = models.CharField(
+        max_length=64, db_index=True, null=True, blank=True
+    )
     group_snapshot = models.JSONField(default=dict, blank=True)
-    debate = models.ForeignKey(Debate, on_delete=models.CASCADE, related_name='messages')
+    debate = models.ForeignKey(
+        Debate, on_delete=models.CASCADE, related_name="messages"
+    )
     text = models.TextField()
-    posture = models.CharField(max_length=10, choices=POSTURES, default='neutral')
-    parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='replies')
+    posture = models.CharField(max_length=10, choices=POSTURES, default="neutral")
+    parent = models.ForeignKey(
+        "self", on_delete=models.SET_NULL, null=True, blank=True, related_name="replies"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     @property
@@ -53,4 +61,4 @@ class Message(models.Model):
         self.group_snapshot = group_snapshot_from_principal(value)
 
     def __str__(self):
-        return f'Message by {self.user.username} in {self.debate.title}'
+        return f"Message by {self.user.username} in {self.debate.title}"

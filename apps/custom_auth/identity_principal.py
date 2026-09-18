@@ -64,7 +64,9 @@ def principal_from_token(validated_token):
         return None
     return IdentityPrincipal(
         id=str(user_id),
-        username=_clean(validated_token.get("email") or validated_token.get("username")),
+        username=_clean(
+            validated_token.get("email") or validated_token.get("username")
+        ),
         first_name=_clean(validated_token.get("first_name")),
         last_name=_clean(validated_token.get("last_name")),
         extra=dict(token_payload),

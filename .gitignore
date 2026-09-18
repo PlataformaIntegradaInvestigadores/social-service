@@ -25,9 +25,20 @@ apps/media/profile_pictures/*
 # Archivos multimedia subidos en ejecucion
 apps/media/feed_posts/*
 
+# Agent configuration (local only, not committed)
+AGENTS.md
+
 # Archivos de usuarios subidos en ejecucion (PII: CVs, logos de empresa)
 apps/media/resumes/*
 apps/media/company_logos/*
 
 # Agent configuration (local only, not committed)
 AGENTS.md
+
+# Artefactos de tests locales
+.coverage
+coverage-*.xml
+report*.xml
+htmlcov/
+.venv-test/
+.venv-test-requirements.txt

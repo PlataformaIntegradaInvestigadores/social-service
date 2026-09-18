@@ -4,27 +4,27 @@ import os
 import random
 import string
 import uuid
+
 import django.db.models.deletion
 import pgvector.django.vector
 from django.conf import settings
 from django.db import migrations, models
-from django.contrib.postgres.operations import CreateExtension
 
 
 def generate_unique_id(length=10):
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+    return "".join(random.choices(string.ascii_letters + string.digits, k=length))
 
 
 def get_profile_picture_filepath(instance, filename):
-    ext = filename.split('.')[-1]
+    ext = filename.split(".")[-1]
     filename = f"{uuid.uuid4()}.{ext}"
-    return os.path.join('profile_pictures/', filename)
+    return os.path.join("profile_pictures/", filename)
 
 
 def get_company_logo_filepath(instance, filename):
-    ext = filename.split('.')[-1]
+    ext = filename.split(".")[-1]
     filename = f"{uuid.uuid4()}.{ext}"
-    return f'company_logos/{filename}'
+    return f"company_logos/{filename}"
 
 
 class Migration(migrations.Migration):
@@ -32,119 +32,407 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('auth', '0012_alter_user_first_name_max_length'),
+        ("auth", "0012_alter_user_first_name_max_length"),
     ]
 
     operations = [
         # Enable pgvector extension
         migrations.RunSQL(
             "CREATE EXTENSION IF NOT EXISTS vector;",
-            reverse_sql="DROP EXTENSION IF EXISTS vector CASCADE;"
+            reverse_sql="DROP EXTENSION IF EXISTS vector CASCADE;",
         ),
         migrations.CreateModel(
-            name='User',
+            name="User",
             fields=[
-                ('last_login', models.DateTimeField(blank=True, null=True, verbose_name='last login')),
-                ('is_superuser', models.BooleanField(default=False, help_text='Designates that this user has all permissions without explicitly assigning them.', verbose_name='superuser status')),
-                ('id', models.CharField(default=generate_unique_id, editable=False, max_length=10, primary_key=True, serialize=False)),
-                ('first_name', models.CharField(max_length=30)),
-                ('last_name', models.CharField(max_length=30)),
-                ('username', models.EmailField(max_length=254, unique=True)),
-                ('password', models.CharField(max_length=128)),
-                ('scopus_id', models.CharField(blank=True, max_length=20, null=True)),
-                ('investigation_camp', models.CharField(blank=True, max_length=100, null=True)),
-                ('institution', models.CharField(blank=True, max_length=100, null=True)),
-                ('email_institution', models.EmailField(blank=True, max_length=254, null=True)),
-                ('website', models.URLField(blank=True, null=True)),
-                ('profile_picture', models.ImageField(blank=True, default='profile_pictures/default_profile_picture.png', null=True, upload_to=get_profile_picture_filepath)),
-                ('is_active', models.BooleanField(default=True)),
-                ('is_staff', models.BooleanField(default=False)),
-                ('job_recommendations_embedding', pgvector.django.vector.VectorField(blank=True, dimensions=768, null=True, verbose_name='Vector para recomendaciones de jobs')),
-                ('feed_recommendations_embedding', pgvector.django.vector.VectorField(blank=True, dimensions=768, null=True, verbose_name='Vector para recomendaciones de posts')),
-                ('profile_vector_updated_at', models.DateTimeField(blank=True, null=True, verbose_name='Última actualización del vector de perfil')),
-                ('interests', models.TextField(blank=True, null=True, verbose_name='Intereses del usuario (para generar embeddings)')),
-                ('interaction_count', models.IntegerField(default=0, verbose_name='Contador de interacciones para actualización de vectores')),
-                ('groups', models.ManyToManyField(blank=True, help_text='The groups this user belongs to.', related_name='user_set_custom', to='auth.group', verbose_name='groups')),
-                ('user_permissions', models.ManyToManyField(blank=True, help_text='Specific permissions for this user.', related_name='user_set_custom', to='auth.permission', verbose_name='user permissions')),
+                (
+                    "last_login",
+                    models.DateTimeField(
+                        blank=True, null=True, verbose_name="last login"
+                    ),
+                ),
+                (
+                    "is_superuser",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Designates that this user has all permissions without explicitly assigning them.",
+                        verbose_name="superuser status",
+                    ),
+                ),
+                (
+                    "id",
+                    models.CharField(
+                        default=generate_unique_id,
+                        editable=False,
+                        max_length=10,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("first_name", models.CharField(max_length=30)),
+                ("last_name", models.CharField(max_length=30)),
+                ("username", models.EmailField(max_length=254, unique=True)),
+                ("password", models.CharField(max_length=128)),
+                ("scopus_id", models.CharField(blank=True, max_length=20, null=True)),
+                (
+                    "investigation_camp",
+                    models.CharField(blank=True, max_length=100, null=True),
+                ),
+                (
+                    "institution",
+                    models.CharField(blank=True, max_length=100, null=True),
+                ),
+                (
+                    "email_institution",
+                    models.EmailField(blank=True, max_length=254, null=True),
+                ),
+                ("website", models.URLField(blank=True, null=True)),
+                (
+                    "profile_picture",
+                    models.ImageField(
+                        blank=True,
+                        default="profile_pictures/default_profile_picture.png",
+                        null=True,
+                        upload_to=get_profile_picture_filepath,
+                    ),
+                ),
+                ("is_active", models.BooleanField(default=True)),
+                ("is_staff", models.BooleanField(default=False)),
+                (
+                    "job_recommendations_embedding",
+                    pgvector.django.vector.VectorField(
+                        blank=True,
+                        dimensions=768,
+                        null=True,
+                        verbose_name="Vector para recomendaciones de jobs",
+                    ),
+                ),
+                (
+                    "feed_recommendations_embedding",
+                    pgvector.django.vector.VectorField(
+                        blank=True,
+                        dimensions=768,
+                        null=True,
+                        verbose_name="Vector para recomendaciones de posts",
+                    ),
+                ),
+                (
+                    "profile_vector_updated_at",
+                    models.DateTimeField(
+                        blank=True,
+                        null=True,
+                        verbose_name="Última actualización del vector de perfil",
+                    ),
+                ),
+                (
+                    "interests",
+                    models.TextField(
+                        blank=True,
+                        null=True,
+                        verbose_name="Intereses del usuario (para generar embeddings)",
+                    ),
+                ),
+                (
+                    "interaction_count",
+                    models.IntegerField(
+                        default=0,
+                        verbose_name="Contador de interacciones para actualización de vectores",
+                    ),
+                ),
+                (
+                    "groups",
+                    models.ManyToManyField(
+                        blank=True,
+                        help_text="The groups this user belongs to.",
+                        related_name="user_set_custom",
+                        to="auth.group",
+                        verbose_name="groups",
+                    ),
+                ),
+                (
+                    "user_permissions",
+                    models.ManyToManyField(
+                        blank=True,
+                        help_text="Specific permissions for this user.",
+                        related_name="user_set_custom",
+                        to="auth.permission",
+                        verbose_name="user permissions",
+                    ),
+                ),
             ],
             options={
-                'db_table': 'users',
+                "db_table": "users",
             },
         ),
         migrations.CreateModel(
-            name='Company',
+            name="Company",
             fields=[
-                ('last_login', models.DateTimeField(blank=True, null=True, verbose_name='last login')),
-                ('is_superuser', models.BooleanField(default=False, help_text='Designates that this user has all permissions without explicitly assigning them.', verbose_name='superuser status')),
-                ('id', models.CharField(default=generate_unique_id, editable=False, max_length=10, primary_key=True, serialize=False)),
-                ('company_name', models.CharField(max_length=200, verbose_name='Nombre de la Empresa')),
-                ('username', models.EmailField(max_length=254, unique=True, verbose_name='Correo Electrónico')),
-                ('password', models.CharField(max_length=128)),
-                ('industry', models.CharField(choices=[('technology', 'Tecnología'), ('health', 'Salud'), ('sales', 'Ventas'), ('finance', 'Finanzas'), ('education', 'Educación'), ('manufacturing', 'Manufactura'), ('retail', 'Comercio'), ('consulting', 'Consultoría'), ('energy', 'Energía'), ('telecommunications', 'Telecomunicaciones'), ('automotive', 'Automotriz'), ('food', 'Alimentaria'), ('real_estate', 'Bienes Raíces'), ('media', 'Medios de Comunicación'), ('transportation', 'Transporte'), ('other', 'Otro')], default='other', max_length=20, verbose_name='Industria')),
-                ('description', models.TextField(blank=True, max_length=1000, null=True, verbose_name='Descripción')),
-                ('website', models.URLField(blank=True, null=True)),
-                ('phone', models.CharField(blank=True, max_length=20, null=True, verbose_name='Teléfono')),
-                ('address', models.CharField(blank=True, max_length=300, null=True, verbose_name='Dirección')),
-                ('logo', models.ImageField(blank=True, default='company_logos/default_company_logo.png', null=True, upload_to=get_company_logo_filepath, verbose_name='Logo')),
-                ('founded_year', models.IntegerField(blank=True, null=True, verbose_name='Año de Fundación')),
-                ('employee_count', models.CharField(blank=True, choices=[('1-10', '1-10 empleados'), ('11-50', '11-50 empleados'), ('51-200', '51-200 empleados'), ('201-500', '201-500 empleados'), ('501-1000', '501-1000 empleados'), ('1000+', 'Más de 1000 empleados')], max_length=20, null=True, verbose_name='Número de Empleados')),
-                ('is_active', models.BooleanField(default=True)),
-                ('is_staff', models.BooleanField(default=False)),
-                ('date_joined', models.DateTimeField(auto_now_add=True)),
-                ('is_verified', models.BooleanField(default=False, verbose_name='Empresa Verificada')),
-                ('groups', models.ManyToManyField(blank=True, help_text='The groups this company belongs to.', related_name='company_set_custom', to='auth.group', verbose_name='groups')),
-                ('user_permissions', models.ManyToManyField(blank=True, help_text='Specific permissions for this company.', related_name='company_set_custom', to='auth.permission', verbose_name='user permissions')),
+                (
+                    "last_login",
+                    models.DateTimeField(
+                        blank=True, null=True, verbose_name="last login"
+                    ),
+                ),
+                (
+                    "is_superuser",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Designates that this user has all permissions without explicitly assigning them.",
+                        verbose_name="superuser status",
+                    ),
+                ),
+                (
+                    "id",
+                    models.CharField(
+                        default=generate_unique_id,
+                        editable=False,
+                        max_length=10,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                (
+                    "company_name",
+                    models.CharField(
+                        max_length=200, verbose_name="Nombre de la Empresa"
+                    ),
+                ),
+                (
+                    "username",
+                    models.EmailField(
+                        max_length=254, unique=True, verbose_name="Correo Electrónico"
+                    ),
+                ),
+                ("password", models.CharField(max_length=128)),
+                (
+                    "industry",
+                    models.CharField(
+                        choices=[
+                            ("technology", "Tecnología"),
+                            ("health", "Salud"),
+                            ("sales", "Ventas"),
+                            ("finance", "Finanzas"),
+                            ("education", "Educación"),
+                            ("manufacturing", "Manufactura"),
+                            ("retail", "Comercio"),
+                            ("consulting", "Consultoría"),
+                            ("energy", "Energía"),
+                            ("telecommunications", "Telecomunicaciones"),
+                            ("automotive", "Automotriz"),
+                            ("food", "Alimentaria"),
+                            ("real_estate", "Bienes Raíces"),
+                            ("media", "Medios de Comunicación"),
+                            ("transportation", "Transporte"),
+                            ("other", "Otro"),
+                        ],
+                        default="other",
+                        max_length=20,
+                        verbose_name="Industria",
+                    ),
+                ),
+                (
+                    "description",
+                    models.TextField(
+                        blank=True,
+                        max_length=1000,
+                        null=True,
+                        verbose_name="Descripción",
+                    ),
+                ),
+                ("website", models.URLField(blank=True, null=True)),
+                (
+                    "phone",
+                    models.CharField(
+                        blank=True, max_length=20, null=True, verbose_name="Teléfono"
+                    ),
+                ),
+                (
+                    "address",
+                    models.CharField(
+                        blank=True, max_length=300, null=True, verbose_name="Dirección"
+                    ),
+                ),
+                (
+                    "logo",
+                    models.ImageField(
+                        blank=True,
+                        default="company_logos/default_company_logo.png",
+                        null=True,
+                        upload_to=get_company_logo_filepath,
+                        verbose_name="Logo",
+                    ),
+                ),
+                (
+                    "founded_year",
+                    models.IntegerField(
+                        blank=True, null=True, verbose_name="Año de Fundación"
+                    ),
+                ),
+                (
+                    "employee_count",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("1-10", "1-10 empleados"),
+                            ("11-50", "11-50 empleados"),
+                            ("51-200", "51-200 empleados"),
+                            ("201-500", "201-500 empleados"),
+                            ("501-1000", "501-1000 empleados"),
+                            ("1000+", "Más de 1000 empleados"),
+                        ],
+                        max_length=20,
+                        null=True,
+                        verbose_name="Número de Empleados",
+                    ),
+                ),
+                ("is_active", models.BooleanField(default=True)),
+                ("is_staff", models.BooleanField(default=False)),
+                ("date_joined", models.DateTimeField(auto_now_add=True)),
+                (
+                    "is_verified",
+                    models.BooleanField(
+                        default=False, verbose_name="Empresa Verificada"
+                    ),
+                ),
+                (
+                    "groups",
+                    models.ManyToManyField(
+                        blank=True,
+                        help_text="The groups this company belongs to.",
+                        related_name="company_set_custom",
+                        to="auth.group",
+                        verbose_name="groups",
+                    ),
+                ),
+                (
+                    "user_permissions",
+                    models.ManyToManyField(
+                        blank=True,
+                        help_text="Specific permissions for this company.",
+                        related_name="company_set_custom",
+                        to="auth.permission",
+                        verbose_name="user permissions",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Empresa',
-                'verbose_name_plural': 'Empresas',
-                'db_table': 'companies',
+                "verbose_name": "Empresa",
+                "verbose_name_plural": "Empresas",
+                "db_table": "companies",
             },
         ),
         migrations.CreateModel(
-            name='Group',
+            name="Group",
             fields=[
-                ('id', models.CharField(default=generate_unique_id, editable=False, max_length=10, primary_key=True, serialize=False)),
-                ('title', models.CharField(max_length=255)),
-                ('description', models.TextField()),
-                ('voting_type', models.CharField(choices=[('Positional Voting', 'Positional'), ('Non-Positional Voting', 'Nonpositional')], default='Positional Voting', max_length=50)),
-                ('admin', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='administered_groups', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.CharField(
+                        default=generate_unique_id,
+                        editable=False,
+                        max_length=10,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("title", models.CharField(max_length=255)),
+                ("description", models.TextField()),
+                (
+                    "voting_type",
+                    models.CharField(
+                        choices=[
+                            ("Positional Voting", "Positional"),
+                            ("Non-Positional Voting", "Nonpositional"),
+                        ],
+                        default="Positional Voting",
+                        max_length=50,
+                    ),
+                ),
+                (
+                    "admin",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="administered_groups",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'db_table': 'groups',
+                "db_table": "groups",
             },
         ),
         migrations.CreateModel(
-            name='GroupUser',
+            name="GroupUser",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('group', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='custom_auth.group')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "group",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="custom_auth.group",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'db_table': 'group_users',
+                "db_table": "group_users",
             },
         ),
         migrations.AddField(
-            model_name='group',
-            name='users',
-            field=models.ManyToManyField(related_name='member_groups', through='custom_auth.GroupUser', to=settings.AUTH_USER_MODEL),
+            model_name="group",
+            name="users",
+            field=models.ManyToManyField(
+                related_name="member_groups",
+                through="custom_auth.GroupUser",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.CreateModel(
-            name='ProfileInformation',
+            name="ProfileInformation",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('about_me', models.TextField(blank=True, null=True)),
-                ('disciplines', models.JSONField(blank=True, default=list)),
-                ('contact_info', models.JSONField(blank=True, default=dict)),
-                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='profile_information', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("about_me", models.TextField(blank=True, null=True)),
+                ("disciplines", models.JSONField(blank=True, default=list)),
+                ("contact_info", models.JSONField(blank=True, default=dict)),
+                (
+                    "user",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="profile_information",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'db_table': 'profiles_information',
+                "db_table": "profiles_information",
             },
         ),
         migrations.AddConstraint(
-            model_name='user',
-            constraint=models.UniqueConstraint(condition=models.Q(('scopus_id__isnull', False)), fields=('scopus_id',), name='unique_scopus_id'),
+            model_name="user",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("scopus_id__isnull", False)),
+                fields=("scopus_id",),
+                name="unique_scopus_id",
+            ),
         ),
     ]
