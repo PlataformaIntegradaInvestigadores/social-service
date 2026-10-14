@@ -12,6 +12,19 @@ from apps.concensus.domain.entities.result_concensus import ConsensusResult
 logger = logging.getLogger(__name__)
 
 
+def _display_name(user_id, snapshot):
+    """Nombre legible para las etiquetas de resultados. idUser_snapshot (set
+    en final_topic_views.py via snapshot_from_principal) trae first_name/
+    last_name/username, pero el codigo previo ignoraba el snapshot y mostraba
+    el identity_id crudo (p. ej. "VVDq1j5vN4 rated it as Novel"). Cae al id
+    solo si el snapshot esta vacio (p. ej. datos de prueba sin snapshot)."""
+    snapshot = snapshot or {}
+    full_name = (
+        f"{snapshot.get('first_name', '')} {snapshot.get('last_name', '')}".strip()
+    )
+    return full_name or snapshot.get("username") or str(user_id)
+
+
 def get_user_data(group_id):
     RecommendedTopic = apps.get_model("concensus", "RecommendedTopic")
     FinalTopicOrder = apps.get_model("concensus", "FinalTopicOrder")
@@ -50,7 +63,10 @@ def get_user_data(group_id):
             topic_name = pos.idTopic.topic_name
             positions_data[topic_name][str(user_id)] = pos.posFinal
             if pos.label:
-                labels_data[topic_name].append(f"{user_id} rated it as {pos.label}")
+                display_name = _display_name(user_id, pos.idUser_snapshot)
+                labels_data[topic_name].append(
+                    f"{display_name} rated it as {pos.label}"
+                )
 
         for exp in user_expertise:
             topic_name = exp.topic.topic_name

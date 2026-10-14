@@ -101,6 +101,61 @@ class TestGetUserData(APITestCase):
 
         self.assertEqual(expertise_data["IA"]["u1"], 1)
 
+    def test_label_usa_el_nombre_del_snapshot_no_el_id_crudo(self):
+        # Regresion: la etiqueta mostraba el identity_id crudo
+        # ("VVDq1j5vN4 rated it as Novel") en vez del nombre, aunque
+        # idUser_snapshot ya trae first_name/last_name/username.
+        UserPhase.objects.create(user_identity_id="u1", group_identity_id="g1", phase=2)
+        topic = RecommendedTopic.objects.create(topic_name="IA", group_identity_id="g1")
+        FinalTopicOrder.objects.create(
+            idGroup_identity_id="g1",
+            idUser_identity_id="u1",
+            idTopic=topic,
+            posFinal=1,
+            label="Novel",
+            idUser_snapshot={
+                "id": "u1",
+                "username": "ana@example.com",
+                "first_name": "Ana",
+                "last_name": "Lopez",
+            },
+        )
+
+        _, _, _, _, _, labels_data = get_user_data("g1")
+
+        self.assertEqual(labels_data["IA"], ["Ana Lopez rated it as Novel"])
+
+    def test_label_sin_nombre_en_snapshot_usa_username(self):
+        UserPhase.objects.create(user_identity_id="u1", group_identity_id="g1", phase=2)
+        topic = RecommendedTopic.objects.create(topic_name="IA", group_identity_id="g1")
+        FinalTopicOrder.objects.create(
+            idGroup_identity_id="g1",
+            idUser_identity_id="u1",
+            idTopic=topic,
+            posFinal=1,
+            label="Novel",
+            idUser_snapshot={"id": "u1", "username": "ana@example.com"},
+        )
+
+        _, _, _, _, _, labels_data = get_user_data("g1")
+
+        self.assertEqual(labels_data["IA"], ["ana@example.com rated it as Novel"])
+
+    def test_label_sin_snapshot_cae_al_identity_id(self):
+        UserPhase.objects.create(user_identity_id="u1", group_identity_id="g1", phase=2)
+        topic = RecommendedTopic.objects.create(topic_name="IA", group_identity_id="g1")
+        FinalTopicOrder.objects.create(
+            idGroup_identity_id="g1",
+            idUser_identity_id="u1",
+            idTopic=topic,
+            posFinal=1,
+            label="Novel",
+        )
+
+        _, _, _, _, _, labels_data = get_user_data("g1")
+
+        self.assertEqual(labels_data["IA"], ["u1 rated it as Novel"])
+
 
 class ExecuteConsensusTestCase(APITestCase):
     def setUp(self):
