@@ -19,6 +19,9 @@ from apps.concensus.infrastructure.api.v1.views.result_concensus_views import (
 from apps.concensus.tests.testing_utils import mock_channel_layer
 from apps.custom_auth.identity_principal import IdentityPrincipal
 
+GROUP_DETAIL_PATCH = (
+    "apps.concensus.infrastructure.api.v1.permissions.get_identity_group_detail"
+)
 CHANNEL_LAYER_PATCH = (
     "apps.concensus.infrastructure.api.v1.views.result_concensus_views."
     "get_channel_layer"
@@ -125,7 +128,9 @@ class TestGetUserData(APITestCase):
 
         self.assertEqual(labels_data["IA"], ["Ana Lopez rated it as Novel"])
 
-    def test_label_sin_nombre_en_snapshot_usa_username(self):
+    def test_label_sin_nombre_en_snapshot_no_expone_el_username(self):
+        # El username es el correo en esta plataforma: nunca debe filtrarse a
+        # otros miembros del grupo. Sin nombre se cae al identity_id opaco.
         UserPhase.objects.create(user_identity_id="u1", group_identity_id="g1", phase=2)
         topic = RecommendedTopic.objects.create(topic_name="IA", group_identity_id="g1")
         FinalTopicOrder.objects.create(
@@ -139,7 +144,8 @@ class TestGetUserData(APITestCase):
 
         _, _, _, _, _, labels_data = get_user_data("g1")
 
-        self.assertEqual(labels_data["IA"], ["ana@example.com rated it as Novel"])
+        self.assertEqual(labels_data["IA"], ["u1 rated it as Novel"])
+        self.assertNotIn("ana@example.com", " ".join(labels_data["IA"]))
 
     def test_label_sin_snapshot_cae_al_identity_id(self):
         UserPhase.objects.create(user_identity_id="u1", group_identity_id="g1", phase=2)
@@ -162,6 +168,16 @@ class ExecuteConsensusTestCase(APITestCase):
         self.client = APIClient()
         self.client.force_authenticate(user=IdentityPrincipal(id="u1", username="ana"))
         self.group_id = "g1"
+        self.group_detail = {
+            "id": self.group_id,
+            "admin_id": "admin",
+            "users": [{"id": "u1"}, {"id": "u2"}],
+        }
+        patcher = patch(
+            GROUP_DETAIL_PATCH, side_effect=lambda *a, **k: self.group_detail
+        )
+        self.group_detail_mock = patcher.start()
+        self.addCleanup(patcher.stop)
 
     def _setup_completed_user(self):
         UserPhase.objects.create(
@@ -213,3 +229,64 @@ class TestConsensusCalculationByVotingTypeView(ExecuteConsensusTestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(ConsensusResult.objects.count(), 0)
         self.assertEqual(response.data["results"][0]["labels"], ["There aren't labels"])
+
+
+class TestConsensusGroupMembership(ExecuteConsensusTestCase):
+    """Solo el admin o un miembro del grupo puede leer o recalcular su consenso."""
+
+    EXECUTE = "/api/v1/groups/g1/execute_consensus_calculations/"
+
+    def _as(self, user_id):
+        self.client.force_authenticate(user=IdentityPrincipal(id=user_id))
+
+    def test_no_miembro_no_puede_recalcular_ni_borrar_resultados(self):
+        topic = self._setup_completed_user()
+        ConsensusResult.objects.create(
+            idGroup_identity_id=self.group_id,
+            idGroup_snapshot={"id": self.group_id},
+            idTopic=topic,
+            final_value=1.0,
+        )
+        self._as("intruso")
+
+        response = self.client.get(self.EXECUTE)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(ConsensusResult.objects.count(), 1)
+
+    def test_no_miembro_no_puede_leer_el_consenso_por_tipo_de_voto(self):
+        self._setup_completed_user()
+        self._as("intruso")
+
+        response = self.client.get(self.EXECUTE + "non-positional-voting/")
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertNotIn("results", response.data)
+
+    def test_admin_del_grupo_puede_ejecutar(self):
+        self._setup_completed_user()
+        self._as("admin")
+
+        with patch(CHANNEL_LAYER_PATCH, return_value=mock_channel_layer()):
+            response = self.client.get(self.EXECUTE)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_si_identity_no_responde_se_deniega(self):
+        self._setup_completed_user()
+        self.group_detail = None
+
+        response = self.client.get(self.EXECUTE + "non-positional-voting/")
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_se_valida_contra_el_grupo_de_la_url_con_el_token_del_usuario(self):
+        self._setup_completed_user()
+
+        self.client.get(
+            self.EXECUTE + "non-positional-voting/", HTTP_AUTHORIZATION="Bearer tok"
+        )
+
+        self.group_detail_mock.assert_called_once_with(
+            "g1", authorization_header="Bearer tok"
+        )
