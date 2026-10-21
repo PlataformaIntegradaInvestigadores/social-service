@@ -8,6 +8,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 
 from apps.concensus.domain.entities.result_concensus import ConsensusResult
+from apps.concensus.infrastructure.api.v1.permissions import IsGroupMember
 
 logger = logging.getLogger(__name__)
 
@@ -15,14 +16,15 @@ logger = logging.getLogger(__name__)
 def _display_name(user_id, snapshot):
     """Nombre legible para las etiquetas de resultados. idUser_snapshot (set
     en final_topic_views.py via snapshot_from_principal) trae first_name/
-    last_name/username, pero el codigo previo ignoraba el snapshot y mostraba
-    el identity_id crudo (p. ej. "VVDq1j5vN4 rated it as Novel"). Cae al id
-    solo si el snapshot esta vacio (p. ej. datos de prueba sin snapshot)."""
+    last_name, pero el codigo previo ignoraba el snapshot y mostraba el
+    identity_id crudo (p. ej. "VVDq1j5vN4 rated it as Novel"). Cae al id solo
+    si el snapshot no trae nombre. Nunca usa el username: en esta plataforma es
+    el correo y las etiquetas las ven los demas miembros del grupo."""
     snapshot = snapshot or {}
     full_name = (
         f"{snapshot.get('first_name', '')} {snapshot.get('last_name', '')}".strip()
     )
-    return full_name or snapshot.get("username") or str(user_id)
+    return full_name or str(user_id)
 
 
 def get_user_data(group_id):
@@ -158,7 +160,7 @@ class VotingAlgorithms:
 
 
 class ExecuteConsensusCalculationsView(generics.GenericAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsGroupMember]
 
     def get(self, request, group_id):
         return _execute_consensus(
@@ -167,7 +169,7 @@ class ExecuteConsensusCalculationsView(generics.GenericAPIView):
 
 
 class ConsensusCalculationByVotingTypeView(generics.GenericAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsGroupMember]
 
     def get(self, request, group_id, voting_type):
         if voting_type not in ["positional-voting", "non-positional-voting"]:
