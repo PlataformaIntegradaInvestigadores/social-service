@@ -46,9 +46,30 @@ apps/<app>/
 ## Requisitos previos
 
 - Docker y Docker Compose
-- Red Docker externa `centinela-net` (compartida con el resto de la plataforma)
+- Red Docker externa `centinela-net` (compartida con el resto de la plataforma). Si no existe, créala una vez: `docker network create centinela-net`
 
 ## Levantar en local
+
+### Configuración obligatoria (hazlo antes del primer arranque)
+
+El repo **no trae secretos**: cada quien define los suyos en un `.env` local (gitignorado).
+
+1. Crea la red compartida (una sola vez por máquina):
+   ```bash
+   docker network create centinela-net
+   ```
+2. Copia la plantilla y edítala:
+   ```bash
+   cp .env.example .env
+   ```
+3. Reemplaza en `.env` todos los valores `change-me-*` y las claves de ejemplo. Como mínimo:
+   - `SECRET_KEY` y `JWT_SIGNING_KEY`
+   - `DB_PASSWORD`
+   - `REDIS_PASSWORD`: **invéntala tú**. `docker-compose.yml` arranca Redis con `--requirepass $REDIS_PASSWORD` y Django/Channels/Celery leen la misma variable, así que no hay nada más que sincronizar. Si queda vacía, `docker compose up` falla con un mensaje explícito.
+   - `PROFILE_SYNC_INTERNAL_TOKEN`
+4. Las URLs entre servicios (`EMBEDDING_SERVICE_URL`, `GRS_SERVICE_URL`, `PROFILE_IDENTITY_BASE_URL`) apuntan a los alias de `centinela-net`. Si solo levantas este servicio, esas funciones fallarán hasta que levantes los otros repos o cambies las URLs.
+
+> `redis.conf` ya no contiene contraseña: no pongas secretos en archivos versionados.
 
 ### Con Docker (recomendado)
 
@@ -75,7 +96,8 @@ Ver `.env.example`. Variables clave:
 |---|---|
 | `SECRET_KEY` / `JWT_SIGNING_KEY` | Claves de Django y de firma de JWT |
 | `DB_NAME` / `DB_USER` / `DB_PASSWORD` / `DB_HOST` / `DB_PORT` | Conexión a PostgreSQL |
-| `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` | Conexión a Redis (debe coincidir con `redis.conf`) |
+| `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` | Conexión a Redis. `REDIS_PASSWORD` es obligatoria y la usa también el contenedor de Redis (`--requirepass`) |
+| `SOCIAL_DB_VOLUME` | Opcional. Nombre del volumen de Postgres; solo para servidores con un volumen preexistente (p. ej. `centinela_postgres_data`) |
 | `DEBUG` / `ALLOWED_HOSTS` | Configuración estándar de Django |
 
 ## Documentación (Swagger)
