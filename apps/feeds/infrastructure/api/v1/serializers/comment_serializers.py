@@ -5,6 +5,10 @@ from apps.custom_auth.identity_profile_client import (
     merge_identity_snapshot,
 )
 from apps.feeds.domain.entities.comment import Comment
+from apps.feeds.domain.services.moderation_service import hidden_last
+from apps.feeds.infrastructure.api.v1.serializers.moderation_serializers import (
+    ModerationRepresentationMixin,
+)
 
 
 class CommentAuthorSerializer(serializers.Serializer):
@@ -17,10 +21,11 @@ class CommentAuthorSerializer(serializers.Serializer):
     profile_picture = serializers.CharField(read_only=True, allow_blank=True)
 
 
-class CommentSerializer(serializers.ModelSerializer):
+class CommentSerializer(ModerationRepresentationMixin, serializers.ModelSerializer):
     """Basic comment serializer"""
 
     author = serializers.SerializerMethodField()
+    moderation = serializers.SerializerMethodField()
     replies_count = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
 
@@ -37,6 +42,7 @@ class CommentSerializer(serializers.ModelSerializer):
             "is_deleted",
             "created_at",
             "updated_at",
+            "moderation",
         ]
         read_only_fields = [
             "id",
@@ -118,14 +124,17 @@ class CommentDetailSerializer(CommentSerializer):
         if obj.get_level() >= 3:  # Limit nesting depth
             return []
 
-        replies = obj.replies.filter(is_deleted=False).order_by("created_at")
+        replies = hidden_last(obj.replies.filter(is_deleted=False), "created_at")
         return CommentSerializer(replies, many=True, context=self.context).data
 
 
-class CommentThreadSerializer(serializers.ModelSerializer):
+class CommentThreadSerializer(
+    ModerationRepresentationMixin, serializers.ModelSerializer
+):
     """Serializer for comment threads with full hierarchy"""
 
     author = serializers.SerializerMethodField()
+    moderation = serializers.SerializerMethodField()
     replies = serializers.SerializerMethodField()
     user_has_liked = serializers.SerializerMethodField()
 
@@ -141,6 +150,7 @@ class CommentThreadSerializer(serializers.ModelSerializer):
             "is_deleted",
             "created_at",
             "updated_at",
+            "moderation",
         ]
         read_only_fields = [
             "id",
@@ -169,7 +179,7 @@ class CommentThreadSerializer(serializers.ModelSerializer):
         if obj.get_level() >= 5:  # Hard limit for recursion
             return []
 
-        replies = obj.replies.filter(is_deleted=False).order_by("created_at")
+        replies = hidden_last(obj.replies.filter(is_deleted=False), "created_at")
         return CommentThreadSerializer(replies, many=True, context=self.context).data
 
     def get_user_has_liked(self, obj):

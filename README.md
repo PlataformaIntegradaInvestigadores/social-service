@@ -99,6 +99,17 @@ Ver `.env.example`. Variables clave:
 | `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` | Conexión a Redis. `REDIS_PASSWORD` es obligatoria y la usa también el contenedor de Redis (`--requirepass`) |
 | `SOCIAL_DB_VOLUME` | Opcional. Nombre del volumen de Postgres; solo para servidores con un volumen preexistente (p. ej. `centinela_postgres_data`) |
 | `DEBUG` / `ALLOWED_HOSTS` | Configuración estándar de Django |
+| `HATESPEECH_SERVICE_URL` / `HATESPEECH_INTERNAL_API_KEY` | URL interna de `hatespeech-service` y su `INTERNAL_API_KEY`. Vacía = moderación deshabilitada |
+| `HATESPEECH_TIMEOUT` / `HATESPEECH_EXPLAIN` | Timeout (s) de las llamadas y si se pide la explicación XAI al clasificar |
+| `MODERATOR_USER_IDS` | Ids de identity (separados por coma) con acceso a la cola de revisión, además de `is_staff` |
+
+## Moderación de discurso de odio
+
+Posts y comentarios se publican de inmediato con `moderation.status = "pending"`. Una señal `post_save` encola (tras el commit) la tarea Celery `apps.feeds.tasks.classify_content`, que llama a `hatespeech-service` (`POST /api/v1/classify`) con `X-Internal-Api-Key`. Si el servicio no responde, la tarea reintenta con backoff exponencial (15 s → máx. 10 min, 12 intentos) y la tarea periódica `sweep_pending_moderation_task` (cada 10 min) reencola lo que quedó `pending`/`failed`. Editar el texto vuelve a clasificar.
+
+- Los serializers de posts y comentarios incluyen `moderation` (`visibility`, `show_warning`, `is_blocked`, `report_count`, `can_report`...; `p_hate`/`label` solo para moderadores). Los comentarios ocultos se ordenan al final y su texto sigue disponible para mostrarlo al hacer clic; el contenido bloqueado se reemplaza por un aviso salvo para moderadores.
+- `POST /api/v1/posts/<id>/report/` y `/comments/<id>/report/` (`reason` opcional): con 5 reportes distintos el contenido se oculta y pasa a revisión.
+- Solo moderadores: `GET /api/v1/moderation/me/`, `GET /api/v1/moderation/review-queue/` (`status`, `reason`, `content_type`, `limit`, `offset`), `GET .../review-queue/<case_id>/` y `POST .../review-queue/<case_id>/decision/` (`approve` | `keep_hidden` | `block`, `notes`). El front nunca llama a `hatespeech-service` directamente.
 
 ## Documentación (Swagger)
 

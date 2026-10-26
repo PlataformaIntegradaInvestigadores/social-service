@@ -12,6 +12,7 @@ from apps.custom_auth.identity_profile_client import (
 from apps.feeds.domain.entities.comment import Comment
 from apps.feeds.domain.entities.feed_post import FeedPost
 from apps.feeds.domain.services.feed_service import FeedService
+from apps.feeds.domain.services.moderation_service import hidden_last
 from apps.feeds.infrastructure.api.v1.serializers.comment_serializers import (
     CommentCreateSerializer,
     CommentDetailSerializer,
@@ -33,9 +34,13 @@ class CommentListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         """Get comments for a post"""
         post_id = self.kwargs.get("post_id")
-        return Comment.objects.filter(
-            post_id=post_id, parent_comment=None, is_deleted=False  # Only root comments
-        ).order_by("-created_at")
+        # Solo comentarios raíz; los ocultos por moderación van al final.
+        return hidden_last(
+            Comment.objects.filter(
+                post_id=post_id, parent_comment=None, is_deleted=False
+            ),
+            "-created_at",
+        )
 
     def get_serializer_class(self):
         if self.request.method == "POST":
@@ -174,9 +179,10 @@ class CommentRepliesView(generics.ListCreateAPIView):
     def get_queryset(self):
         """Get replies to a comment"""
         comment_id = self.kwargs.get("comment_id")
-        return Comment.objects.filter(
-            parent_comment_id=comment_id, is_deleted=False
-        ).order_by("created_at")
+        return hidden_last(
+            Comment.objects.filter(parent_comment_id=comment_id, is_deleted=False),
+            "created_at",
+        )
 
     def get_serializer_class(self):
         if self.request.method == "POST":

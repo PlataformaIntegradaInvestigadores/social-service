@@ -10,6 +10,10 @@ from apps.custom_auth.identity_profile_client import (
 from apps.feeds.domain.entities.feed_post import FeedPost
 from apps.feeds.domain.entities.poll import Poll
 from apps.feeds.domain.entities.post_file import PostFile
+from apps.feeds.domain.services.moderation_service import hidden_last
+from apps.feeds.infrastructure.api.v1.serializers.moderation_serializers import (
+    ModerationRepresentationMixin,
+)
 
 from .poll_serializers import PollSerializer
 
@@ -109,9 +113,10 @@ class FlexibleTagsField(serializers.Field):
         return value or []
 
 
-class FeedPostSerializer(serializers.ModelSerializer):
+class FeedPostSerializer(ModerationRepresentationMixin, serializers.ModelSerializer):
     """Basic feed post serializer"""
 
+    moderation = serializers.SerializerMethodField()
     tags = FlexibleTagsField(required=False)
     author = serializers.SerializerMethodField()
     files = serializers.SerializerMethodField()
@@ -137,6 +142,7 @@ class FeedPostSerializer(serializers.ModelSerializer):
             "is_liked",
             "created_at",
             "updated_at",
+            "moderation",
         ]
         read_only_fields = [
             "id",
@@ -414,9 +420,9 @@ class FeedPostDetailSerializer(FeedPostSerializer):
         """Get recent comments preview"""
         from .comment_serializers import CommentSerializer
 
-        recent_comments = obj.comments.filter(
-            parent_comment=None, is_deleted=False
-        ).order_by("-created_at")[:3]
+        recent_comments = hidden_last(
+            obj.comments.filter(parent_comment=None, is_deleted=False), "-created_at"
+        )[:3]
         return CommentSerializer(recent_comments, many=True, context=self.context).data
 
     def get_user_has_liked(self, obj):
