@@ -13,9 +13,10 @@ from apps.custom_auth.identity_principal import (
     ref_from_snapshot,
     snapshot_from_principal,
 )
+from apps.feeds.domain.entities.moderation import ModeratedContent
 
 
-class FeedPost(models.Model):
+class FeedPost(ModeratedContent):
     """
     Modelo para posts del feed social
     """
