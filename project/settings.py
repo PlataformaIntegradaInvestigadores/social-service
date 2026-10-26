@@ -288,3 +288,18 @@ PROFILE_SYNC_INTERNAL_TOKEN = os.getenv("PROFILE_SYNC_INTERNAL_TOKEN", "")
 PROFILE_IDENTITY_BASE_URL = os.getenv(
     "PROFILE_IDENTITY_BASE_URL", "http://identity-service:8002"
 )
+
+# Moderación de discurso de odio (hatespeech-service).
+# Vacío = integración desactivada: no se encolan clasificaciones y los
+# endpoints de reporte/revisión responden 503.
+HATESPEECH_SERVICE_URL = os.getenv("HATESPEECH_SERVICE_URL", "").rstrip("/")
+HATESPEECH_INTERNAL_API_KEY = os.getenv("HATESPEECH_INTERNAL_API_KEY", "")
+HATESPEECH_TIMEOUT = float(os.getenv("HATESPEECH_TIMEOUT", "30"))
+HATESPEECH_EXPLAIN = os.getenv("HATESPEECH_EXPLAIN", "True").lower() in ("1", "true")
+# El JWT de identity-service aún no incluye is_staff: los moderadores se
+# declaran aquí (ids de identity separados por coma) además del claim opcional.
+MODERATOR_USER_IDS = {
+    item.strip()
+    for item in os.getenv("MODERATOR_USER_IDS", "").split(",")
+    if item.strip()
+}

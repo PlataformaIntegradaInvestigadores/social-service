@@ -35,6 +35,14 @@ def setup_periodic_tasks(sender, **kwargs):
         name="update missing post embeddings every 15 minutes",
     )
 
+    # Re-encola posts/comentarios sin clasificar por hatespeech-service
+    # (servicio caído, broker perdido o contenido previo a la integración).
+    sender.add_periodic_task(
+        crontab(minute="*/10"),
+        sweep_pending_moderation_task.s(),
+        name="sweep pending hate speech moderation every 10 minutes",
+    )
+
 
 @app.task
 def update_missing_job_embeddings_task():
@@ -48,6 +56,13 @@ def update_missing_post_embeddings_task():
     from django.core.management import call_command
 
     call_command("update_post_embeddings", batch_size=50)
+
+
+@app.task
+def sweep_pending_moderation_task():
+    from apps.feeds.tasks import sweep_pending_moderation
+
+    return sweep_pending_moderation()
 
 
 @app.task
