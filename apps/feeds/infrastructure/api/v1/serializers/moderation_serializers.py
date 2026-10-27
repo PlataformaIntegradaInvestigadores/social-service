@@ -32,7 +32,8 @@ class ReviewQueueQuerySerializer(serializers.Serializer):
         choices=["pending", "resolved", "all"], required=False, default="pending"
     )
     reason = serializers.ChoiceField(
-        choices=["hidden_by_model", "reported", "deferred"], required=False
+        choices=["hidden_by_model", "reported", "deferred", "review_band"],
+        required=False,
     )
     content_type = serializers.ChoiceField(choices=["post", "comment"], required=False)
     limit = serializers.IntegerField(

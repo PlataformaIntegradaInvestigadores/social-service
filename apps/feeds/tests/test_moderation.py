@@ -504,6 +504,16 @@ class TestReviewQueueViews(ModerationApiTestCase):
         self.assertEqual(params["reason"], "reported")
         self.assertEqual(params["status"], "pending")
 
+    def test_cola_acepta_motivo_review_band(self):
+        self.hs.review_queue.return_value = {"total": 0, "items": []}
+        self.as_moderator()
+        response = self.client.get(
+            "/api/v1/moderation/review-queue/", {"reason": "review_band"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        params = self.hs.review_queue.call_args.kwargs["params"]
+        self.assertEqual(params["reason"], "review_band")
+
     def test_cola_parametros_invalidos(self):
         self.as_moderator()
         response = self.client.get("/api/v1/moderation/review-queue/", {"limit": 0})
