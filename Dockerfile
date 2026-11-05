@@ -25,5 +25,11 @@ COPY --chown=appuser:appuser . .
 
 USER appuser
 
+# This image also runs the Celery worker and beat (the compose files override the
+# command), so the check works out which role it is in. See scripts/healthcheck.py.
+# The worker check takes a few seconds: it starts Django and pings the worker.
+HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
+    CMD ["python", "scripts/healthcheck.py"]
+
 # Comando para ejecutar el servidor
 CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "project.asgi:application"]
