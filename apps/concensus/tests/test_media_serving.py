@@ -66,3 +66,13 @@ def test_resumes_are_not_public(make_media):
     make_media("resumes", "zz-test-cv.pdf", b"%PDF-private")
 
     assert Client().get("/media/resumes/zz-test-cv.pdf").status_code == 404
+
+
+@override_settings(DEBUG=False)
+def test_dot_dot_cannot_escape_into_resumes(make_media):
+    make_media("resumes", "zz-test-cv.pdf", b"%PDF-private")
+
+    response = Client().get("/media/feed_posts/../resumes/zz-test-cv.pdf")
+
+    # safe_join rejects the escape (400); it must never be served (200).
+    assert response.status_code in (400, 404)
