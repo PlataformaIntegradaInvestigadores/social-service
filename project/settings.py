@@ -228,34 +228,39 @@ CHANNEL_LAYERS = {
     },
 }
 
+# Verbose request/SQL logging is only useful while debugging; at INFO the console
+# stays readable and does not log every query (and its parameters) in staging.
+LOG_LEVEL = "DEBUG" if DEBUG else "INFO"
+DB_LOG_LEVEL = "DEBUG" if DEBUG else "WARNING"
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "handlers": {
         "console": {
-            "level": "DEBUG",
+            "level": LOG_LEVEL,
             "class": "logging.StreamHandler",
         },
     },
     "loggers": {
         "django": {
             "handlers": ["console"],
-            "level": "DEBUG",
+            "level": LOG_LEVEL,
             "propagate": True,
         },
         "django.request": {
             "handlers": ["console"],
-            "level": "DEBUG",
+            "level": LOG_LEVEL,
             "propagate": False,
         },
         "django.db.backends": {
             "handlers": ["console"],
-            "level": "DEBUG",
+            "level": DB_LOG_LEVEL,
             "propagate": False,
         },
         "apps.custom_auth": {
             "handlers": ["console"],
-            "level": "DEBUG",
+            "level": LOG_LEVEL,
             "propagate": True,
         },
     },
