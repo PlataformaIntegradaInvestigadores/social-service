@@ -12,14 +12,7 @@ from django.utils import timezone
 
 # Importar modelos de jobs
 from apps.jobs.domain.entities.jobs import Jobs
-from apps.jobs.domain.services.job_embedding_service import job_embedding_text
 from apps.shared.embedding_client import EmbeddingClient
-
-# Importar servicio de vectores de usuario si existe
-try:
-    from apps.custom_auth.domain.services.user_vector_service import user_vector_service
-except ImportError:
-    user_vector_service = None
 
 logger = logging.getLogger(__name__)
 
@@ -166,12 +159,6 @@ class JobsService:
 
             logger.info(f"Búsqueda semántica completada: {queryset.count()} resultados")
 
-            # Registrar interacción de búsqueda si hay usuario
-            if user and user_vector_service:
-                user_vector_service.update_user_vectors_on_interaction(
-                    user_id=str(user.id), interaction_type="job_search", content=query
-                )
-
             return queryset
 
         except Exception as e:
@@ -245,14 +232,6 @@ class JobsService:
             elif interaction_type == "application":
                 Jobs.objects.filter(id=job.id).update(
                     application_count=F("application_count") + 1
-                )
-
-            # Actualizar vectores del usuario si el servicio está disponible
-            if user_vector_service:
-                user_vector_service.update_user_vectors_on_interaction(
-                    user_id=str(user.id),
-                    interaction_type=f"job_{interaction_type}",
-                    content=job_embedding_text(job),
                 )
 
             logger.info(

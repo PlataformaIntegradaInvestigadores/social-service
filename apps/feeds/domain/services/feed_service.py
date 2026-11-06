@@ -9,8 +9,6 @@ from django.db import models
 from django.db.models import Count, F, Q
 from django.db.models.expressions import RawSQL
 
-# Importar servicio de vectores de usuario
-from apps.custom_auth.domain.services.user_vector_service import user_vector_service
 from apps.custom_auth.identity_principal import (
     ref_from_snapshot,
     snapshot_from_principal,
@@ -74,11 +72,6 @@ class FeedService:
 
             # Generar embedding para el post
             self.update_post_embedding(post.id)
-
-            # Actualizar vectores del usuario basado en su nuevo post
-            user_vector_service.update_user_vectors_on_interaction(
-                user_id=author_id, interaction_type="post_created", content=content
-            )
 
             logger.info(f"Post creado: {post.id} por {author_id}")
             return post
@@ -260,13 +253,6 @@ class FeedService:
                 post.refresh_from_db()
                 post.update_engagement_score()
 
-            # Actualizar vectores del usuario basado en la interacción
-            user_vector_service.update_user_vectors_on_interaction(
-                user_id=user_id,
-                interaction_type=interaction_type,
-                content=post.content[:200],  # Primeros 200 caracteres
-            )
-
             logger.info(
                 f"Interacción {interaction_type} registrada: Usuario {user_id} - "
                 f"Post {post_id}"
@@ -314,11 +300,6 @@ class FeedService:
 
             # Actualizar engagement del post
             post.update_engagement_score()
-            # Actualizar vectores del usuario
-            user_vector_service.update_user_vectors_on_interaction(
-                user_id=author_id, interaction_type="comment", content=content
-            )
-
             logger.info(f"Comentario creado: {comment.id} por {author_id}")
             return comment
 
@@ -339,12 +320,6 @@ class FeedService:
 
             # Actualizar engagement del post
             post.update_engagement_score()
-
-            # Actualizar vectores del usuario si se creó el like
-            if created:
-                user_vector_service.update_user_vectors_on_interaction(
-                    user_id=user.id, interaction_type="like", content=post.content[:100]
-                )
 
             logger.info(
                 f"Like {'creado' if created else 'eliminado'}: Usuario {user.id} - "
@@ -486,14 +461,6 @@ class FeedService:
         try:
             # Toggle like
             like, created = Like.toggle_like(user, comment)
-
-            # Actualizar vectores del usuario si se creó el like
-            if created:
-                user_vector_service.update_user_vectors_on_interaction(
-                    user_id=user.id,
-                    interaction_type="like",
-                    content=comment.content[:100],
-                )
 
             logger.info(
                 f"Like {'creado' if created else 'eliminado'}: Usuario {user.id} - "

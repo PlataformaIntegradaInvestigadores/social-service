@@ -220,18 +220,3 @@ class TestHandleJobInteraction(BaseJobsServiceTestCase):
 
         job.refresh_from_db()
         self.assertEqual(job.application_count, 1)
-
-    def test_no_lanza_si_falla_el_registro_de_vectores_de_usuario(self):
-        job = Jobs.objects.create(
-            company=self.company, title="Backend Dev", description="desc"
-        )
-        user = MagicMock(id="u1")
-
-        with patch(
-            "apps.jobs.domain.services.jobs_service.user_vector_service"
-        ) as mock_vector_service:
-            mock_vector_service.update_user_vectors_on_interaction.side_effect = (
-                RuntimeError("boom")
-            )
-            # No debe propagar la excepcion.
-            self.service.handle_job_interaction(user, job, "view")
