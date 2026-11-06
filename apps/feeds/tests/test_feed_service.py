@@ -18,7 +18,7 @@ from apps.feeds.domain.entities.feed_post import FeedPost
 from apps.feeds.domain.entities.poll import Poll  # noqa: F401
 from apps.feeds.domain.services.feed_service import FeedService
 
-GET_EMBEDDING = "apps.feeds.domain.services.feed_service.requests.post"
+GET_EMBEDDING = "apps.shared.embedding_client.requests.post"
 
 
 def _post(**kwargs):
@@ -30,45 +30,6 @@ def _post(**kwargs):
     }
     defaults.update(kwargs)
     return FeedPost.objects.create(**defaults)
-
-
-class TestGetEmbeddingFromMicroservice(TestCase):
-    def setUp(self):
-        self.service = FeedService(embedding_service_url="http://embed.local")
-
-    def test_respuesta_200_con_vector_retorna_vector(self):
-        mock_resp = type(
-            "R", (), {"status_code": 200, "json": lambda self=None: {"vector": [1, 2]}}
-        )()
-        with patch(GET_EMBEDDING, return_value=mock_resp):
-            result = self.service.get_embedding_from_microservice("hola")
-        self.assertEqual(result, [1, 2])
-
-    def test_respuesta_200_sin_vector_retorna_none(self):
-        mock_resp = type(
-            "R", (), {"status_code": 200, "json": lambda self=None: {}}
-        )()
-        with patch(GET_EMBEDDING, return_value=mock_resp):
-            result = self.service.get_embedding_from_microservice("hola")
-        self.assertIsNone(result)
-
-    def test_respuesta_no_200_retorna_none(self):
-        mock_resp = type(
-            "R", (), {"status_code": 500, "text": "err"}
-        )()
-        with patch(GET_EMBEDDING, return_value=mock_resp):
-            result = self.service.get_embedding_from_microservice("hola")
-        self.assertIsNone(result)
-
-    def test_excepcion_de_red_retorna_none(self):
-        with patch(GET_EMBEDDING, side_effect=requests.ConnectionError("down")):
-            result = self.service.get_embedding_from_microservice("hola")
-        self.assertIsNone(result)
-
-    def test_excepcion_generica_retorna_none(self):
-        with patch(GET_EMBEDDING, side_effect=ValueError("boom")):
-            result = self.service.get_embedding_from_microservice("hola")
-        self.assertIsNone(result)
 
 
 class TestCreatePost(TestCase):
@@ -149,9 +110,7 @@ class TestGetPersonalizedFeed(TestCase):
     def test_delega_en_trending(self):
         service = FeedService()
         _post()
-        posts, has_next, cursor = service.get_personalized_feed(
-            user_id="u1", limit=10
-        )
+        posts, has_next, cursor = service.get_personalized_feed(user_id="u1", limit=10)
         self.assertIsInstance(posts, list)
 
     def test_con_user_object(self):
@@ -455,12 +414,15 @@ class TestSearchPostsBySimilarity(TestCase):
             (),
             {
                 "status_code": 200,
-                "json": lambda self=None: {"vector": [0.1] * 768, "processed_text": "x"},
+                "json": lambda self=None: {
+                    "vector": [0.1] * 768,
+                    "processed_text": "x",
+                },
             },
         )()
         with (
             patch(
-                "apps.feeds.domain.services.feed_service.requests.post",
+                "apps.shared.embedding_client.requests.post",
                 return_value=mock_resp,
             ),
             patch(

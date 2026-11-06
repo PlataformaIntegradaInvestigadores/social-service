@@ -8,7 +8,7 @@ from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
 from apps.jobs.domain.entities.jobs import Jobs
-from apps.jobs.domain.services.vector_recommendation_service import vector_service
+from apps.jobs.domain.services.job_embedding_service import job_embedding_service
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ def handle_job_save(sender, instance, created, **kwargs):
                 f"{'nuevo' if created else 'sin embedding'}: "
                 f"{instance.id} - {instance.title}"
             )
-            success = vector_service.update_job_embedding(instance)
+            success = job_embedding_service.update_job_embedding(instance)
 
             if success:
                 logger.info(f"Embedding generado exitosamente para job {instance.id}")

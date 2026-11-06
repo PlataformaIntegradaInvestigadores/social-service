@@ -67,7 +67,7 @@ class Command(BaseCommand):
 
             start_time = time.time()
             # Llamamos directamente al servicio que encapsula la petición
-            vector = feed_service.get_embedding_from_microservice(text)
+            vector = feed_service.embeddings.embed(text)
             end_time = time.time()
 
             duration_ms = (end_time - start_time) * 1000

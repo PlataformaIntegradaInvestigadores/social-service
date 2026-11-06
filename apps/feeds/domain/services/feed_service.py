@@ -5,8 +5,6 @@ Servicio principal para manejo del feed social con embeddings y recomendaciones
 import logging
 from typing import Any
 
-import requests
-from django.conf import settings
 from django.db import models
 from django.db.models import Count, F, Q
 from django.db.models.expressions import RawSQL
@@ -22,6 +20,7 @@ from apps.feeds.domain.entities.comment import Comment
 # Importar modelos del feed
 from apps.feeds.domain.entities.feed_post import FeedPost
 from apps.feeds.domain.entities.like import Like
+from apps.shared.embedding_client import EmbeddingClient
 
 logger = logging.getLogger(__name__)
 
@@ -31,50 +30,8 @@ class FeedService:
     Servicio principal para manejo del feed social
     """
 
-    def __init__(self, embedding_service_url: str = None):
-        self.embedding_service_url = (
-            embedding_service_url or settings.EMBEDDING_SERVICE_URL
-        )
-
-    def get_embedding_from_microservice(self, text: str) -> list[float] | None:
-        """
-        Obtiene embedding de texto desde el microservicio
-        """
-        try:
-            payload = {"text": text, "translate_to_english": True, "clean_text": True}
-
-            response = requests.post(
-                f"{self.embedding_service_url}/text-processing/vectorize/",
-                json=payload,
-                timeout=30,
-                headers={"Content-Type": "application/json"},
-            )
-
-            if response.status_code == 200:
-                result = response.json()
-                vector = result.get("vector")
-                if vector:
-                    logger.info(
-                        f"Embedding generado para post. "
-                        f"Dimensiones: {result.get('dimension', len(vector))}"
-                    )
-                    return vector
-                else:
-                    logger.error("El microservicio no devolvió un vector válido")
-                    return None
-            else:
-                logger.error(
-                    f"Error al obtener embedding: {response.status_code} - "
-                    f"{response.text}"
-                )
-                return None
-
-        except requests.RequestException as e:
-            logger.error(f"Error de conexión con microservicio: {str(e)}")
-            return None
-        except Exception as e:
-            logger.error(f"Error inesperado: {str(e)}")
-            return None
+    def __init__(self, embedding_service_url: str = None, embeddings=None):
+        self.embeddings = embeddings or EmbeddingClient(embedding_service_url)
 
     def create_post(
         self,
@@ -141,7 +98,7 @@ class FeedService:
             embedding_text = self._generate_post_embedding_text(post)
 
             # Obtener embedding
-            embedding = self.get_embedding_from_microservice(embedding_text)
+            embedding = self.embeddings.embed(embedding_text)
 
             if embedding:
                 post.embedding = embedding
@@ -579,27 +536,14 @@ class FeedService:
             query_embedding = None
             processed_text = cleaned_query
 
-            try:
-                payload = {
-                    "text": cleaned_query,
-                    "translate_to_english": True,
-                    "clean_text": True,
-                }
-                resp = requests.post(
-                    f"{self.embedding_service_url}/text-processing/vectorize/",
-                    json=payload,
-                    timeout=30,
-                    headers={"Content-Type": "application/json"},
+            result = self.embeddings.vectorize(cleaned_query)
+            if result:
+                query_embedding = result.vector
+                if result.processed_text is not None:
+                    processed_text = result.processed_text
+                logger.info(
+                    f"Búsqueda: '{cleaned_query}' → traducido: '{processed_text}'"
                 )
-                if resp.status_code == 200:
-                    body = resp.json()
-                    query_embedding = body.get("vector")
-                    processed_text = body.get("processed_text", cleaned_query)
-                    logger.info(
-                        f"Búsqueda: '{cleaned_query}' → traducido: '{processed_text}'"
-                    )
-            except requests.RequestException as e:
-                logger.error(f"Error microservicio embeddings: {e}")
 
             if not query_embedding:
                 logger.warning(f"Sin embedding para: {cleaned_query}")
