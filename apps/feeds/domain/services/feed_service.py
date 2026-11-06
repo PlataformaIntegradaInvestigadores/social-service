@@ -3,11 +3,12 @@ Servicio principal para manejo del feed social con embeddings y recomendaciones
 """
 
 import logging
+from datetime import timedelta
 from typing import Any
 
-from django.db import models
 from django.db.models import Count, F, Q
 from django.db.models.expressions import RawSQL
+from django.utils import timezone
 
 from apps.custom_auth.identity_principal import (
     ref_from_snapshot,
@@ -21,6 +22,33 @@ from apps.feeds.domain.entities.like import Like
 from apps.shared.embedding_client import EmbeddingClient
 
 logger = logging.getLogger(__name__)
+
+HOURS_OLD_SQL = 'EXTRACT(EPOCH FROM (NOW() - "feeds_feedpost"."created_at")) / 3600'
+
+# Trending score of a post, computed in the database:
+# 1. engagement_score already includes the logarithmic time decay;
+# 2. a boost for recent velocity, inversely proportional to the square root of age.
+TRENDING_SCORE_SQL = f"""
+    (
+        engagement_score * 0.8 +
+        (engagement_score / SQRT(GREATEST(1, {HOURS_OLD_SQL}))) * 0.2
+    )
+"""
+
+TRENDING_TIME_RANGES = {
+    "24h": timedelta(hours=24),
+    "7d": timedelta(days=7),
+    "30d": timedelta(days=30),
+}
+
+
+def annotate_trending(queryset):
+    """Add hours_old, trending_score and the live comment count to `queryset`."""
+    return queryset.annotate(
+        hours_old=RawSQL(HOURS_OLD_SQL, []),
+        trending_score=RawSQL(TRENDING_SCORE_SQL, []),
+        comments_count_real=Count("comments", filter=Q(comments__is_deleted=False)),
+    ).prefetch_related("post_files", "comments")
 
 
 class FeedService:
@@ -165,38 +193,13 @@ class FeedService:
         try:
             logger.info(f"Obteniendo feed trending con límite: {limit}")
 
-            hours_old_sql = (
-                'EXTRACT(EPOCH FROM (NOW() - "feeds_feedpost"."created_at")) / 3600'
-            )
-
-            # Nuevo algoritmo de trending mejorado:
-            # 1. Usa el engagement_score ya calculado que incluye el decaimiento
-            #    logarítmico
-            # 2. Agrega un boost para posts con alta velocidad de engagement reciente
-            trending_score_sql = f"""
-                (
-                    engagement_score * 0.8 + 
-                    (engagement_score / SQRT(GREATEST(1, {hours_old_sql}))) * 0.2
-                )
-            """
-
             queryset = FeedPost.objects.filter(is_public=True)
 
             # Excluir posts propios del usuario si se especifica
             if exclude_user_id:
                 queryset = queryset.exclude(author_identity_id=str(exclude_user_id))
 
-            queryset = (
-                queryset.annotate(
-                    hours_old=RawSQL(hours_old_sql, []),
-                    trending_score=RawSQL(trending_score_sql, []),
-                    comments_count_real=Count(
-                        "comments", filter=models.Q(comments__is_deleted=False)
-                    ),
-                )
-                .prefetch_related("post_files", "comments")
-                .order_by("-trending_score")
-            )
+            queryset = annotate_trending(queryset).order_by("-trending_score")
 
             # Contar posts disponibles
             total_count = queryset.count()
@@ -232,6 +235,33 @@ class FeedService:
 
             logger.error(traceback.format_exc())
             return self.get_latest_feed(limit, cursor, exclude_user_id=exclude_user_id)
+
+    def get_trending_in_range(self, time_range: str = "24h", limit: int = 20):
+        """Posts of the last `time_range` (24h, 7d or 30d) ranked by trending score.
+
+        An unknown range means 24h. If the ranking query fails, the most recent
+        posts of the range are returned instead.
+        """
+        time_threshold = timezone.now() - TRENDING_TIME_RANGES.get(
+            time_range, TRENDING_TIME_RANGES["24h"]
+        )
+        recent = FeedPost.objects.filter(created_at__gte=time_threshold, is_public=True)
+
+        try:
+            return list(
+                annotate_trending(recent).order_by(
+                    "-trending_score", "-engagement_score", "-created_at"
+                )[:limit]
+            )
+        except Exception as exc:
+            logger.exception(
+                "Error calculando feed trending; se devuelve feed reciente: %s", exc
+            )
+            return list(
+                recent.prefetch_related("post_files", "comments").order_by(
+                    "-created_at"
+                )[:limit]
+            )
 
     def handle_user_interaction(
         self, user_id: str, post_id: str, interaction_type: str

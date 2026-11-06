@@ -1,7 +1,6 @@
 import logging
 
 from django.db import models
-from django.db.models.expressions import RawSQL
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import generics, permissions, status
@@ -212,51 +211,8 @@ def trending_posts(request):
         limit = 20
     time_range = request.GET.get("time_range", "24h")  # 24h, 7d, 30d
 
-    # Calculate time threshold
     now = timezone.now()
-    if time_range == "24h":
-        time_threshold = now - timezone.timedelta(hours=24)
-    elif time_range == "7d":
-        time_threshold = now - timezone.timedelta(days=7)
-    elif time_range == "30d":
-        time_threshold = now - timezone.timedelta(days=30)
-    else:
-        time_threshold = now - timezone.timedelta(hours=24)
-
-    # Calcular horas desde la creación para mostrar en respuesta
-    hours_old_sql = 'EXTRACT(EPOCH FROM (NOW() - "feeds_feedpost"."created_at")) / 3600'
-
-    # Obtener trending score mejorado para ordenamiento
-    trending_score_sql = """
-        (
-            engagement_score * 0.8 + 
-            (engagement_score / SQRT(GREATEST(1, EXTRACT(EPOCH FROM (NOW() - "feeds_feedpost"."created_at")) / 3600))) * 0.2
-        )
-    """
-
-    try:
-        # Get trending posts con score calculado
-        posts = list(
-            FeedPost.objects.filter(created_at__gte=time_threshold, is_public=True)
-            .annotate(
-                hours_old=RawSQL(hours_old_sql, []),
-                trending_rank=RawSQL(trending_score_sql, []),
-                comments_count_real=models.Count(
-                    "comments", filter=models.Q(comments__is_deleted=False)
-                ),
-            )
-            .prefetch_related("post_files", "comments")
-            .order_by("-trending_rank", "-engagement_score", "-created_at")[:limit]
-        )
-    except Exception as exc:
-        logger.exception(
-            "Error calculando feed trending; se devuelve feed reciente: %s", exc
-        )
-        posts = list(
-            FeedPost.objects.filter(created_at__gte=time_threshold, is_public=True)
-            .prefetch_related("post_files", "comments")
-            .order_by("-created_at")[:limit]
-        )
+    posts = FeedService().get_trending_in_range(time_range, limit)
 
     # Serialize
     serializer = FeedPostDetailSerializer(
@@ -274,7 +230,7 @@ def trending_posts(request):
                 1,
             ),
             "engagement_score": round(post.engagement_score, 2),
-            "trending_rank": round(getattr(post, "trending_rank", 0), 2),
+            "trending_rank": round(getattr(post, "trending_score", 0), 2),
         }
 
     return Response(
