@@ -73,8 +73,8 @@ class Command(BaseCommand):
             self.stdout.write(f"\nProcesando par: {case['type']}...")
 
             # Obtener embeddings
-            vec1 = feed_service.get_embedding_from_microservice(case["text1"])
-            vec2 = feed_service.get_embedding_from_microservice(case["text2"])
+            vec1 = feed_service.embeddings.embed(case["text1"])
+            vec2 = feed_service.embeddings.embed(case["text2"])
 
             if vec1 and vec2:
                 similarity = self.cosine_similarity(vec1, vec2)

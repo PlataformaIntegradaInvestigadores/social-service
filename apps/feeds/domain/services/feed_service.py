@@ -3,16 +3,13 @@ Servicio principal para manejo del feed social con embeddings y recomendaciones
 """
 
 import logging
+from datetime import timedelta
 from typing import Any
 
-import requests
-from django.conf import settings
-from django.db import models
 from django.db.models import Count, F, Q
 from django.db.models.expressions import RawSQL
+from django.utils import timezone
 
-# Importar servicio de vectores de usuario
-from apps.custom_auth.domain.services.user_vector_service import user_vector_service
 from apps.custom_auth.identity_principal import (
     ref_from_snapshot,
     snapshot_from_principal,
@@ -22,8 +19,36 @@ from apps.feeds.domain.entities.comment import Comment
 # Importar modelos del feed
 from apps.feeds.domain.entities.feed_post import FeedPost
 from apps.feeds.domain.entities.like import Like
+from apps.shared.embedding_client import EmbeddingClient
 
 logger = logging.getLogger(__name__)
+
+HOURS_OLD_SQL = 'EXTRACT(EPOCH FROM (NOW() - "feeds_feedpost"."created_at")) / 3600'
+
+# Trending score of a post, computed in the database:
+# 1. engagement_score already includes the logarithmic time decay;
+# 2. a boost for recent velocity, inversely proportional to the square root of age.
+TRENDING_SCORE_SQL = f"""
+    (
+        engagement_score * 0.8 +
+        (engagement_score / SQRT(GREATEST(1, {HOURS_OLD_SQL}))) * 0.2
+    )
+"""
+
+TRENDING_TIME_RANGES = {
+    "24h": timedelta(hours=24),
+    "7d": timedelta(days=7),
+    "30d": timedelta(days=30),
+}
+
+
+def annotate_trending(queryset):
+    """Add hours_old, trending_score and the live comment count to `queryset`."""
+    return queryset.annotate(
+        hours_old=RawSQL(HOURS_OLD_SQL, []),
+        trending_score=RawSQL(TRENDING_SCORE_SQL, []),
+        comments_count_real=Count("comments", filter=Q(comments__is_deleted=False)),
+    ).prefetch_related("post_files", "comments")
 
 
 class FeedService:
@@ -31,50 +56,8 @@ class FeedService:
     Servicio principal para manejo del feed social
     """
 
-    def __init__(self, embedding_service_url: str = None):
-        self.embedding_service_url = (
-            embedding_service_url or settings.EMBEDDING_SERVICE_URL
-        )
-
-    def get_embedding_from_microservice(self, text: str) -> list[float] | None:
-        """
-        Obtiene embedding de texto desde el microservicio
-        """
-        try:
-            payload = {"text": text, "translate_to_english": True, "clean_text": True}
-
-            response = requests.post(
-                f"{self.embedding_service_url}/text-processing/vectorize/",
-                json=payload,
-                timeout=30,
-                headers={"Content-Type": "application/json"},
-            )
-
-            if response.status_code == 200:
-                result = response.json()
-                vector = result.get("vector")
-                if vector:
-                    logger.info(
-                        f"Embedding generado para post. "
-                        f"Dimensiones: {result.get('dimension', len(vector))}"
-                    )
-                    return vector
-                else:
-                    logger.error("El microservicio no devolvió un vector válido")
-                    return None
-            else:
-                logger.error(
-                    f"Error al obtener embedding: {response.status_code} - "
-                    f"{response.text}"
-                )
-                return None
-
-        except requests.RequestException as e:
-            logger.error(f"Error de conexión con microservicio: {str(e)}")
-            return None
-        except Exception as e:
-            logger.error(f"Error inesperado: {str(e)}")
-            return None
+    def __init__(self, embedding_service_url: str = None, embeddings=None):
+        self.embeddings = embeddings or EmbeddingClient(embedding_service_url)
 
     def create_post(
         self,
@@ -118,11 +101,6 @@ class FeedService:
             # Generar embedding para el post
             self.update_post_embedding(post.id)
 
-            # Actualizar vectores del usuario basado en su nuevo post
-            user_vector_service.update_user_vectors_on_interaction(
-                user_id=author_id, interaction_type="post_created", content=content
-            )
-
             logger.info(f"Post creado: {post.id} por {author_id}")
             return post
 
@@ -141,7 +119,7 @@ class FeedService:
             embedding_text = self._generate_post_embedding_text(post)
 
             # Obtener embedding
-            embedding = self.get_embedding_from_microservice(embedding_text)
+            embedding = self.embeddings.embed(embedding_text)
 
             if embedding:
                 post.embedding = embedding
@@ -215,38 +193,13 @@ class FeedService:
         try:
             logger.info(f"Obteniendo feed trending con límite: {limit}")
 
-            hours_old_sql = (
-                'EXTRACT(EPOCH FROM (NOW() - "feeds_feedpost"."created_at")) / 3600'
-            )
-
-            # Nuevo algoritmo de trending mejorado:
-            # 1. Usa el engagement_score ya calculado que incluye el decaimiento
-            #    logarítmico
-            # 2. Agrega un boost para posts con alta velocidad de engagement reciente
-            trending_score_sql = f"""
-                (
-                    engagement_score * 0.8 + 
-                    (engagement_score / SQRT(GREATEST(1, {hours_old_sql}))) * 0.2
-                )
-            """
-
             queryset = FeedPost.objects.filter(is_public=True)
 
             # Excluir posts propios del usuario si se especifica
             if exclude_user_id:
                 queryset = queryset.exclude(author_identity_id=str(exclude_user_id))
 
-            queryset = (
-                queryset.annotate(
-                    hours_old=RawSQL(hours_old_sql, []),
-                    trending_score=RawSQL(trending_score_sql, []),
-                    comments_count_real=Count(
-                        "comments", filter=models.Q(comments__is_deleted=False)
-                    ),
-                )
-                .prefetch_related("post_files", "comments")
-                .order_by("-trending_score")
-            )
+            queryset = annotate_trending(queryset).order_by("-trending_score")
 
             # Contar posts disponibles
             total_count = queryset.count()
@@ -283,6 +236,33 @@ class FeedService:
             logger.error(traceback.format_exc())
             return self.get_latest_feed(limit, cursor, exclude_user_id=exclude_user_id)
 
+    def get_trending_in_range(self, time_range: str = "24h", limit: int = 20):
+        """Posts of the last `time_range` (24h, 7d or 30d) ranked by trending score.
+
+        An unknown range means 24h. If the ranking query fails, the most recent
+        posts of the range are returned instead.
+        """
+        time_threshold = timezone.now() - TRENDING_TIME_RANGES.get(
+            time_range, TRENDING_TIME_RANGES["24h"]
+        )
+        recent = FeedPost.objects.filter(created_at__gte=time_threshold, is_public=True)
+
+        try:
+            return list(
+                annotate_trending(recent).order_by(
+                    "-trending_score", "-engagement_score", "-created_at"
+                )[:limit]
+            )
+        except Exception as exc:
+            logger.exception(
+                "Error calculando feed trending; se devuelve feed reciente: %s", exc
+            )
+            return list(
+                recent.prefetch_related("post_files", "comments").order_by(
+                    "-created_at"
+                )[:limit]
+            )
+
     def handle_user_interaction(
         self, user_id: str, post_id: str, interaction_type: str
     ):
@@ -302,13 +282,6 @@ class FeedService:
                 post.save(update_fields=[f"{interaction_type}s_count"])
                 post.refresh_from_db()
                 post.update_engagement_score()
-
-            # Actualizar vectores del usuario basado en la interacción
-            user_vector_service.update_user_vectors_on_interaction(
-                user_id=user_id,
-                interaction_type=interaction_type,
-                content=post.content[:200],  # Primeros 200 caracteres
-            )
 
             logger.info(
                 f"Interacción {interaction_type} registrada: Usuario {user_id} - "
@@ -357,11 +330,6 @@ class FeedService:
 
             # Actualizar engagement del post
             post.update_engagement_score()
-            # Actualizar vectores del usuario
-            user_vector_service.update_user_vectors_on_interaction(
-                user_id=author_id, interaction_type="comment", content=content
-            )
-
             logger.info(f"Comentario creado: {comment.id} por {author_id}")
             return comment
 
@@ -382,12 +350,6 @@ class FeedService:
 
             # Actualizar engagement del post
             post.update_engagement_score()
-
-            # Actualizar vectores del usuario si se creó el like
-            if created:
-                user_vector_service.update_user_vectors_on_interaction(
-                    user_id=user.id, interaction_type="like", content=post.content[:100]
-                )
 
             logger.info(
                 f"Like {'creado' if created else 'eliminado'}: Usuario {user.id} - "
@@ -530,14 +492,6 @@ class FeedService:
             # Toggle like
             like, created = Like.toggle_like(user, comment)
 
-            # Actualizar vectores del usuario si se creó el like
-            if created:
-                user_vector_service.update_user_vectors_on_interaction(
-                    user_id=user.id,
-                    interaction_type="like",
-                    content=comment.content[:100],
-                )
-
             logger.info(
                 f"Like {'creado' if created else 'eliminado'}: Usuario {user.id} - "
                 f"Comentario {comment.id}"
@@ -579,27 +533,14 @@ class FeedService:
             query_embedding = None
             processed_text = cleaned_query
 
-            try:
-                payload = {
-                    "text": cleaned_query,
-                    "translate_to_english": True,
-                    "clean_text": True,
-                }
-                resp = requests.post(
-                    f"{self.embedding_service_url}/text-processing/vectorize/",
-                    json=payload,
-                    timeout=30,
-                    headers={"Content-Type": "application/json"},
+            result = self.embeddings.vectorize(cleaned_query)
+            if result:
+                query_embedding = result.vector
+                if result.processed_text is not None:
+                    processed_text = result.processed_text
+                logger.info(
+                    f"Búsqueda: '{cleaned_query}' → traducido: '{processed_text}'"
                 )
-                if resp.status_code == 200:
-                    body = resp.json()
-                    query_embedding = body.get("vector")
-                    processed_text = body.get("processed_text", cleaned_query)
-                    logger.info(
-                        f"Búsqueda: '{cleaned_query}' → traducido: '{processed_text}'"
-                    )
-            except requests.RequestException as e:
-                logger.error(f"Error microservicio embeddings: {e}")
 
             if not query_embedding:
                 logger.warning(f"Sin embedding para: {cleaned_query}")
@@ -620,7 +561,9 @@ class FeedService:
             # ── Paso 3: componentes del score híbrido ──
 
             # 3a. Similitud coseno vectorial
-            similarity_sql = f"(1 - (embedding <=> '{embedding_str}'))"
+            # The vector travels as a query parameter. The keywords and stems below
+            # are reduced to [a-z0-9] first, so they are safe to inline.
+            similarity_sql = "(1 - (embedding <=> %s::vector))"
 
             # 3b. Full-Text Search con stems prefix (cross-language)
             original_kws = [w for w in cleaned_query.lower().split() if len(w) >= 3]
@@ -710,10 +653,10 @@ class FeedService:
                 .exclude(content__exact="")
                 .exclude(content__regex=r"^.{0,30}$")
                 .annotate(
-                    similarity=RawSQL(similarity_sql, []),
+                    similarity=RawSQL(similarity_sql, [embedding_str]),
                     text_match=RawSQL(fts_match_sql if all_stems else "0", []),
                     text_rank=RawSQL(fts_rank_sql if all_stems else "0", []),
-                    relevance_score=RawSQL(score_sql, []),
+                    relevance_score=RawSQL(score_sql, [embedding_str]),
                 )
                 .filter(similarity__gte=similarity_threshold)
                 .prefetch_related("post_files")

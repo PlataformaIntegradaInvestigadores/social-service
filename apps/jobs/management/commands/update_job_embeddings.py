@@ -8,7 +8,7 @@ from django.core.management.base import BaseCommand
 from django.db.models import Q
 
 from apps.jobs.domain.entities.jobs import Jobs
-from apps.jobs.domain.services.vector_recommendation_service import vector_service
+from apps.jobs.domain.services.job_embedding_service import job_embedding_service
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +80,7 @@ class Command(BaseCommand):
 
             for job in batch:
                 try:
-                    success = vector_service.update_job_embedding(job)
+                    success = job_embedding_service.update_job_embedding(job)
                     if success:
                         updated += 1
                         self.stdout.write(f"  ✓ Job {job.id}: {job.title}")

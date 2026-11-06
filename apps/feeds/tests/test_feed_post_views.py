@@ -18,7 +18,7 @@ from apps.feeds.domain.entities.post_file import PostFile
 from apps.feeds.domain.entities.poll import Poll  # noqa: F401
 
 IDENTITY_GET = "apps.custom_auth.identity_profile_client.requests.get"
-EMBEDDING_POST = "apps.feeds.domain.services.feed_service.requests.post"
+EMBEDDING_POST = "apps.shared.embedding_client.requests.post"
 
 
 def _no_identity():

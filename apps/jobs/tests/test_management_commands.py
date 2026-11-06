@@ -12,10 +12,10 @@ from apps.jobs.domain.entities.jobs import Jobs
 from apps.jobs.tasks import update_missing_job_embeddings
 
 UPDATE_JOB_EMBEDDING = (
-    "apps.jobs.infrastructure.signals.vector_service.update_job_embedding"
+    "apps.jobs.infrastructure.signals.job_embedding_service.update_job_embedding"
 )
 VECTOR_SERVICE_UPDATE = (
-    "apps.jobs.management.commands.update_job_embeddings.vector_service"
+    "apps.jobs.management.commands.update_job_embeddings.job_embedding_service"
     ".update_job_embedding"
 )
 

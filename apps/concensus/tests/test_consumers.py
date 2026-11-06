@@ -60,7 +60,7 @@ class TestGroupLikeConsumers(TestCase):
             communicator = WebsocketCommunicator(consumer_cls.as_asgi(), "/ws/")
             communicator.scope["url_route"] = {"kwargs": {"group_id": group_id}}
             with patch(
-                f"{consumer_cls.__module__}.redis.StrictRedis",
+                "apps.concensus.consumer.redis.StrictRedis",
                 return_value=_mock_redis_client(),
             ):
                 connected, _ = await communicator.connect()
@@ -82,6 +82,23 @@ class TestGroupLikeConsumers(TestCase):
         communicator, connected = self._connect(PhaseThreeConsumer)
         self.assertTrue(connected)
         asyncio.run(communicator.disconnect())
+
+    def test_cada_fase_usa_su_propio_grupo_y_clave_de_redis(self):
+        keys = {}
+        for consumer_cls in (GroupConsumer, PhaseTwoConsumer, PhaseThreeConsumer):
+            redis_client = self._increment_and_decrement(consumer_cls, group_id="g7")
+            keys[consumer_cls.__name__] = {
+                call.args[0] for call in redis_client.set.call_args_list
+            }
+
+        self.assertEqual(
+            keys,
+            {
+                "GroupConsumer": {"group_g7"},
+                "PhaseTwoConsumer": {"phase2_group_g7"},
+                "PhaseThreeConsumer": {"phase3_group_g7"},
+            },
+        )
 
     def test_group_message_reenvia_por_el_websocket(self):
         async def _run():
@@ -115,7 +132,7 @@ class TestGroupLikeConsumers(TestCase):
             communicator = WebsocketCommunicator(consumer_cls.as_asgi(), "/ws/")
             communicator.scope["url_route"] = {"kwargs": {"group_id": group_id}}
             with patch(
-                f"{consumer_cls.__module__}.redis.StrictRedis",
+                "apps.concensus.consumer.redis.StrictRedis",
                 return_value=redis_client,
             ):
                 await communicator.connect()

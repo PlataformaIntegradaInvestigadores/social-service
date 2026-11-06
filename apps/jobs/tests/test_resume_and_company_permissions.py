@@ -20,7 +20,7 @@ from apps.jobs.domain.entities.jobs import Jobs
 from apps.jobs.domain.entities.postulants import Postulants
 
 SIGNAL_UPDATE_EMBEDDING = (
-    "apps.jobs.infrastructure.signals.vector_service.update_job_embedding"
+    "apps.jobs.infrastructure.signals.job_embedding_service.update_job_embedding"
 )
 PDF = b"%PDF-1.4\n%%EOF\n"
 

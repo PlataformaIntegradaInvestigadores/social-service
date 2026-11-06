@@ -13,7 +13,7 @@ from apps.jobs.domain.entities.jobs import Jobs
 from apps.jobs.domain.services.jobs_service import JobsService
 
 SIGNAL_UPDATE_EMBEDDING = (
-    "apps.jobs.infrastructure.signals.vector_service.update_job_embedding"
+    "apps.jobs.infrastructure.signals.job_embedding_service.update_job_embedding"
 )
 
 
@@ -29,99 +29,6 @@ class BaseJobsServiceTestCase(TestCase):
             company_name="Empresa Uno",
         )
         self.service = JobsService(embedding_service_url="http://embeddings.test")
-
-
-class TestGetEmbeddingFromMicroservice(BaseJobsServiceTestCase):
-    @patch("apps.jobs.domain.services.jobs_service.requests.post")
-    def test_retorna_vector_en_respuesta_exitosa(self, mock_post):
-        mock_post.return_value = MagicMock(
-            status_code=200, json=lambda: {"vector": [0.1, 0.2], "dimension": 2}
-        )
-
-        result = self.service.get_embedding_from_microservice("texto")
-
-        self.assertEqual(result, [0.1, 0.2])
-
-    @patch("apps.jobs.domain.services.jobs_service.requests.post")
-    def test_retorna_none_si_no_hay_vector_en_respuesta(self, mock_post):
-        mock_post.return_value = MagicMock(
-            status_code=200, json=lambda: {"vector": None}
-        )
-
-        self.assertIsNone(self.service.get_embedding_from_microservice("texto"))
-
-    @patch("apps.jobs.domain.services.jobs_service.requests.post")
-    def test_retorna_none_si_status_no_es_200(self, mock_post):
-        mock_post.return_value = MagicMock(status_code=500, text="error")
-
-        self.assertIsNone(self.service.get_embedding_from_microservice("texto"))
-
-    @patch("apps.jobs.domain.services.jobs_service.requests.post")
-    def test_retorna_none_si_hay_excepcion_de_conexion(self, mock_post):
-        import requests
-
-        mock_post.side_effect = requests.ConnectionError("no disponible")
-
-        self.assertIsNone(self.service.get_embedding_from_microservice("texto"))
-
-    @patch("apps.jobs.domain.services.jobs_service.requests.post")
-    def test_retorna_none_si_hay_excepcion_inesperada(self, mock_post):
-        mock_post.side_effect = ValueError("boom")
-
-        self.assertIsNone(self.service.get_embedding_from_microservice("texto"))
-
-
-class TestUpdateJobEmbedding(BaseJobsServiceTestCase):
-    def test_actualiza_embedding_si_microservicio_responde(self):
-        job = Jobs.objects.create(
-            company=self.company, title="Backend Dev", description="desc"
-        )
-        with patch.object(
-            self.service, "get_embedding_from_microservice", return_value=[0.1] * 768
-        ):
-            result = self.service.update_job_embedding(job.id)
-
-        self.assertTrue(result)
-        job.refresh_from_db()
-        self.assertIsNotNone(job.embedding)
-
-    def test_retorna_false_si_microservicio_no_devuelve_vector(self):
-        job = Jobs.objects.create(
-            company=self.company, title="Backend Dev", description="desc"
-        )
-        with patch.object(
-            self.service, "get_embedding_from_microservice", return_value=None
-        ):
-            result = self.service.update_job_embedding(job.id)
-
-        self.assertFalse(result)
-
-    def test_retorna_false_si_job_no_existe(self):
-        self.assertFalse(self.service.update_job_embedding(999999))
-
-
-class TestGenerateJobEmbeddingText(BaseJobsServiceTestCase):
-    def test_incluye_todos_los_campos_presentes(self):
-        job = Jobs.objects.create(
-            company=self.company,
-            title="Backend Dev",
-            description="desc",
-            requirements="Python",
-            benefits="Remoto",
-            location="Bogota",
-            job_type="full_time",
-            experience_level="senior",
-            is_remote=True,
-        )
-
-        text = self.service._generate_job_embedding_text(job)
-
-        self.assertIn("Puesto: Backend Dev", text)
-        self.assertIn("Requisitos: Python", text)
-        self.assertIn("Beneficios: Remoto", text)
-        self.assertIn("Ubicación: Bogota", text)
-        self.assertIn("Trabajo remoto disponible", text)
-        self.assertIn("Empresa: Empresa Uno", text)
 
 
 class TestGetPersonalizedJobRecommendations(BaseJobsServiceTestCase):
@@ -186,9 +93,7 @@ class TestSemanticSearchJobs(BaseJobsServiceTestCase):
         Jobs.objects.create(
             company=self.company, title="Backend Dev", description="Python jobs"
         )
-        with patch.object(
-            self.service, "get_embedding_from_microservice", return_value=None
-        ):
+        with patch.object(self.service.embeddings, "embed", return_value=None):
             result = self.service.semantic_search_jobs("Backend")
 
         self.assertEqual(result.count(), 1)
@@ -198,8 +103,8 @@ class TestSemanticSearchJobs(BaseJobsServiceTestCase):
             company=self.company, title="Backend Dev", description="Python jobs"
         )
         with patch.object(
-            self.service,
-            "get_embedding_from_microservice",
+            self.service.embeddings,
+            "embed",
             side_effect=RuntimeError("boom"),
         ):
             result = self.service.semantic_search_jobs("Backend")
@@ -231,9 +136,7 @@ class TestTextSearchJobs(BaseJobsServiceTestCase):
             is_remote=False,
         )
 
-        result = self.service._text_search_jobs(
-            "Backend", filters={"is_remote": True}
-        )
+        result = self.service._text_search_jobs("Backend", filters={"is_remote": True})
 
         self.assertEqual(result.count(), 1)
 
@@ -317,18 +220,3 @@ class TestHandleJobInteraction(BaseJobsServiceTestCase):
 
         job.refresh_from_db()
         self.assertEqual(job.application_count, 1)
-
-    def test_no_lanza_si_falla_el_registro_de_vectores_de_usuario(self):
-        job = Jobs.objects.create(
-            company=self.company, title="Backend Dev", description="desc"
-        )
-        user = MagicMock(id="u1")
-
-        with patch(
-            "apps.jobs.domain.services.jobs_service.user_vector_service"
-        ) as mock_vector_service:
-            mock_vector_service.update_user_vectors_on_interaction.side_effect = (
-                RuntimeError("boom")
-            )
-            # No debe propagar la excepcion.
-            self.service.handle_job_interaction(user, job, "view")
