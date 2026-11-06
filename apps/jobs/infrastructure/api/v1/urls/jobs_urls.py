@@ -2,6 +2,7 @@ from django.urls import path
 
 from apps.jobs.infrastructure.api.v1.views.jobs_views import JobsView
 from apps.jobs.infrastructure.api.v1.views.postulants_views import (
+    ApplicationResumeView,
     ApplicationStatusView,
     CompanyApplicationsView,
     PostulantsView,
@@ -33,6 +34,11 @@ urlpatterns = [
     path("applications/", PostulantsView.as_view(), name="applications-list-create"),
     path(
         "applications/<int:pk>/", PostulantsView.as_view(), name="applications-detail"
+    ),
+    path(
+        "applications/<int:pk>/resume/",
+        ApplicationResumeView.as_view(),
+        name="application-resume",
     ),
     # Specific application status and management endpoints
     path(
