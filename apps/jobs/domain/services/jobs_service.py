@@ -144,7 +144,7 @@ class JobsService:
 
             # Búsqueda por similitud de vectores
             embedding_str = "[" + ",".join(map(str, query_embedding)) + "]"
-            similarity_sql = f"(1 - (embedding <#> '{embedding_str}'))"
+            similarity_sql = "(1 - (embedding <#> %s::vector))"
 
             queryset = Jobs.objects.filter(embedding__isnull=False)
 
@@ -154,7 +154,7 @@ class JobsService:
 
             # Ordenar por similitud
             queryset = queryset.annotate(
-                similarity=RawSQL(similarity_sql, [])
+                similarity=RawSQL(similarity_sql, [embedding_str])
             ).order_by("-similarity")[:limit]
 
             logger.info(f"Búsqueda semántica completada: {queryset.count()} resultados")

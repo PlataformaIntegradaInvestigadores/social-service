@@ -561,7 +561,9 @@ class FeedService:
             # ── Paso 3: componentes del score híbrido ──
 
             # 3a. Similitud coseno vectorial
-            similarity_sql = f"(1 - (embedding <=> '{embedding_str}'))"
+            # The vector travels as a query parameter. The keywords and stems below
+            # are reduced to [a-z0-9] first, so they are safe to inline.
+            similarity_sql = "(1 - (embedding <=> %s::vector))"
 
             # 3b. Full-Text Search con stems prefix (cross-language)
             original_kws = [w for w in cleaned_query.lower().split() if len(w) >= 3]
@@ -651,10 +653,10 @@ class FeedService:
                 .exclude(content__exact="")
                 .exclude(content__regex=r"^.{0,30}$")
                 .annotate(
-                    similarity=RawSQL(similarity_sql, []),
+                    similarity=RawSQL(similarity_sql, [embedding_str]),
                     text_match=RawSQL(fts_match_sql if all_stems else "0", []),
                     text_rank=RawSQL(fts_rank_sql if all_stems else "0", []),
-                    relevance_score=RawSQL(score_sql, []),
+                    relevance_score=RawSQL(score_sql, [embedding_str]),
                 )
                 .filter(similarity__gte=similarity_threshold)
                 .prefetch_related("post_files")

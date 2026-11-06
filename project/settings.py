@@ -1,6 +1,7 @@
 import os
 from datetime import timedelta
 
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 load_dotenv()  # Carga las variables de entorno del archivo .env
@@ -28,8 +29,14 @@ JWT_SIGNING_KEY = os.getenv("JWT_SIGNING_KEY", SECRET_KEY)
 DEBUG = os.getenv("DEBUG") == "True"
 
 ALLOWED_HOSTS = [
-    host.strip() for host in os.getenv("ALLOWED_HOSTS", "*").split(",") if host.strip()
+    host.strip() for host in os.getenv("ALLOWED_HOSTS", "").split(",") if host.strip()
 ]
+if not ALLOWED_HOSTS:
+    # Accepting any Host header is only for local work: a deployment that forgets the
+    # variable must not start answering for every hostname.
+    if not DEBUG:
+        raise ImproperlyConfigured("ALLOWED_HOSTS must be set when DEBUG is off.")
+    ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
