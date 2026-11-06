@@ -1,3 +1,7 @@
+import mimetypes
+import os
+
+from django.http import FileResponse
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -7,6 +11,16 @@ from apps.jobs.domain.entities.jobs import Jobs
 from apps.jobs.domain.entities.postulants import Postulants
 from apps.jobs.infrastructure.api.v1.serializers.postulants_serializer import (
     PostulantsSerializer,
+    PostulantsUpdateSerializer,
+)
+
+# What a company may change on an application it received. Everything else (the
+# cover letter, the CV, the job it belongs to) is the applicant's.
+COMPANY_EDITABLE_FIELDS = ("status", "notes")
+
+# Statuses a company can assign. "withdrawn" is the applicant's own decision.
+COMPANY_ASSIGNABLE_STATUSES = tuple(
+    value for value, _ in Postulants.STATUS_CHOICES if value != "withdrawn"
 )
 
 
@@ -132,7 +146,21 @@ class PostulantsView(APIView):
                     {"error": "No tienes permisos para actualizar esta postulación"},
                     status=status.HTTP_403_FORBIDDEN,
                 )
+            serializer_class = PostulantsUpdateSerializer
+            update_data = {
+                k: v for k, v in request.data.items() if k in COMPANY_EDITABLE_FIELDS
+            }
+            new_status = update_data.get("status")
+            if new_status is not None and new_status not in COMPANY_ASSIGNABLE_STATUSES:
+                return Response(
+                    {
+                        "error": "Estado inválido",
+                        "allowed": list(COMPANY_ASSIGNABLE_STATUSES),
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
         else:
+            serializer_class = PostulantsSerializer
             # Los usuarios solo pueden actualizar su carta de presentación
             if postulant.user_identity_id != str(user.id):
                 return Response(
@@ -141,14 +169,12 @@ class PostulantsView(APIView):
                 )
             # Limitar campos que pueden actualizar
             allowed_fields = ["cover_letter", "resume_file"]
-            update_data = {
-                k: v for k, v in request.data.items() if k in allowed_fields
-            }
+            update_data = {k: v for k, v in request.data.items() if k in allowed_fields}
 
-        serializer = PostulantsSerializer(postulant, data=update_data, partial=True)
+        serializer = serializer_class(postulant, data=update_data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data)
+            return Response(PostulantsSerializer(postulant).data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
@@ -275,6 +301,15 @@ class CompanyApplicationsView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        if new_status not in COMPANY_ASSIGNABLE_STATUSES:
+            return Response(
+                {
+                    "error": "Estado inválido",
+                    "allowed": list(COMPANY_ASSIGNABLE_STATUSES),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         try:
             application = Postulants.objects.get(
                 id=application_id, job__company=request.user
@@ -323,3 +358,57 @@ class UserApplicationsView(APIView):
 
         serializer = PostulantsSerializer(queryset, many=True)
         return Response(serializer.data)
+
+
+class ApplicationResumeView(APIView):
+    """Hands the CV of an application only to its two parties: the company that owns
+    the job and the applicant. CVs are personal data, so they are not served from
+    /media/ (that route does not cover resumes/) and there is no public URL for them.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        postulant = (
+            Postulants.objects.select_related("job__company").filter(pk=pk).first()
+        )
+        if postulant is None:
+            return Response(
+                {"error": "Postulación no encontrada"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        user = request.user
+        if hasattr(user, "company_name"):
+            allowed = postulant.job.company_id == user.id
+        else:
+            allowed = postulant.user_identity_id == str(user.id)
+        if not allowed:
+            return Response(
+                {"error": "No tienes permisos para ver este CV"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if not postulant.resume_file:
+            return Response(
+                {"error": "La postulación no tiene CV"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        try:
+            handle = postulant.resume_file.open("rb")
+        except FileNotFoundError:
+            return Response(
+                {"error": "El archivo del CV no está disponible"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        filename = os.path.basename(postulant.resume_file.name)
+        response = FileResponse(
+            handle,
+            as_attachment=True,
+            filename=filename,
+            content_type=mimetypes.guess_type(filename)[0]
+            or "application/octet-stream",
+        )
+        response["X-Content-Type-Options"] = "nosniff"
+        response["Cache-Control"] = "private, no-store"
+        return response
