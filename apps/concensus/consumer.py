@@ -11,10 +11,16 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 
-class GroupConsumer(AsyncWebsocketConsumer):
+class GroupConnectionConsumer(AsyncWebsocketConsumer):
     """
-    Consumer de WebSocket para manejar conexiones y mensajes de un grupo específico.
+    Base de los consumers de WebSocket de un grupo: une al cliente al grupo de
+    canales, cuenta las conexiones activas en Redis y las notifica al grupo.
+
+    Cada fase del consenso usa su propio `group_prefix`; el nombre del grupo de
+    canales y la clave de Redis son `group_prefix + group_id`.
     """
+
+    group_prefix = "group_"
 
     # 1. Métodos de Conexión y Desconexión
     async def connect(self):
@@ -24,7 +30,7 @@ class GroupConsumer(AsyncWebsocketConsumer):
         También incrementa el contador de conexiones activas.
         """
         self.group_id = self.scope["url_route"]["kwargs"]["group_id"]
-        self.group_name = f"group_{self.group_id}"
+        self.group_name = f"{self.group_prefix}{self.group_id}"
         self.redis = redis.StrictRedis(
             host=settings.REDIS_HOST,
             port=settings.REDIS_PORT,
@@ -108,3 +114,9 @@ class GroupConsumer(AsyncWebsocketConsumer):
                 "message": {"type": "connection_count", "active_connections": count},
             },
         )
+
+
+class GroupConsumer(GroupConnectionConsumer):
+    """Consumer del grupo (fase 1 del consenso)."""
+
+    group_prefix = "group_"

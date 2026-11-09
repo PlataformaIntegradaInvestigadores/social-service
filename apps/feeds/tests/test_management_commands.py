@@ -15,7 +15,7 @@ from apps.feeds.domain.entities.feed_post import FeedPost
 from apps.feeds.domain.entities.poll import Poll  # noqa: F401
 from apps.feeds.management.commands.validate_semantics import Command as SemCommand
 
-EMBEDDING_POST = "apps.feeds.domain.services.feed_service.requests.post"
+EMBEDDING_POST = "apps.shared.embedding_client.requests.post"
 
 
 def _post(**kwargs):

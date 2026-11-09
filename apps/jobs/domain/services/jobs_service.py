@@ -6,23 +6,13 @@ import logging
 from datetime import timedelta
 from typing import Any
 
-import requests
-from django.conf import settings
 from django.db.models import F, Q, QuerySet
 from django.db.models.expressions import RawSQL
 from django.utils import timezone
 
 # Importar modelos de jobs
 from apps.jobs.domain.entities.jobs import Jobs
-from apps.jobs.domain.services.vector_recommendation_service import (
-    VectorRecommendationService,
-)
-
-# Importar servicio de vectores de usuario si existe
-try:
-    from apps.custom_auth.domain.services.user_vector_service import user_vector_service
-except ImportError:
-    user_vector_service = None
+from apps.shared.embedding_client import EmbeddingClient
 
 logger = logging.getLogger(__name__)
 
@@ -32,124 +22,8 @@ class JobsService:
     Servicio principal para manejo de trabajos con recomendaciones y búsqueda semántica
     """
 
-    def __init__(self, embedding_service_url: str = None):
-        self.embedding_service_url = (
-            embedding_service_url or settings.EMBEDDING_SERVICE_URL
-        )
-        self.vector_service = VectorRecommendationService(embedding_service_url)
-
-    def get_embedding_from_microservice(self, text: str) -> list[float] | None:
-        """
-        Obtiene embedding de texto desde el microservicio
-        """
-        try:
-            payload = {"text": text, "translate_to_english": True, "clean_text": True}
-
-            response = requests.post(
-                f"{self.embedding_service_url}/text-processing/vectorize/",
-                json=payload,
-                timeout=30,
-                headers={"Content-Type": "application/json"},
-            )
-
-            if response.status_code == 200:
-                result = response.json()
-                vector = result.get("vector")
-                if vector:
-                    logger.info(
-                        f"Embedding generado para texto. "
-                        f"Dimensiones: {result.get('dimension', len(vector))}"
-                    )
-                    return vector
-                else:
-                    logger.error("El microservicio no devolvió un vector válido")
-                    return None
-            else:
-                logger.error(
-                    f"Error al obtener embedding: {response.status_code} - "
-                    f"{response.text}"
-                )
-                return None
-
-        except requests.RequestException as e:
-            logger.error(f"Error de conexión con microservicio: {str(e)}")
-            return None
-        except Exception as e:
-            logger.error(f"Error inesperado: {str(e)}")
-            return None
-
-    def update_job_embedding(self, job_id: int) -> bool:
-        """
-        Actualiza el embedding de un trabajo
-        """
-        try:
-            job = Jobs.objects.get(id=job_id)
-
-            # Generar texto para embedding
-            embedding_text = self._generate_job_embedding_text(job)
-
-            # Obtener embedding
-            embedding = self.get_embedding_from_microservice(embedding_text)
-
-            if embedding:
-                job.embedding = embedding
-                job.save(update_fields=["embedding"])
-                logger.info(f"Embedding actualizado para job {job_id}")
-                return True
-            else:
-                logger.error(f"No se pudo generar embedding para job {job_id}")
-                return False
-
-        except Jobs.DoesNotExist:
-            logger.error(f"Job {job_id} no encontrado")
-            return False
-        except Exception as e:
-            logger.error(f"Error actualizando embedding: {str(e)}")
-            return False
-
-    def _generate_job_embedding_text(self, job: Jobs) -> str:
-        """
-        Genera texto completo del trabajo para crear embedding
-        """
-        text_parts = []
-
-        # Título del trabajo
-        if job.title:
-            text_parts.append(f"Puesto: {job.title}")
-
-        # Descripción
-        if job.description:
-            text_parts.append(f"Descripción: {job.description}")
-
-        # Requisitos
-        if job.requirements:
-            text_parts.append(f"Requisitos: {job.requirements}")
-
-        # Beneficios
-        if job.benefits:
-            text_parts.append(f"Beneficios: {job.benefits}")
-
-        # Información adicional
-        if job.location:
-            text_parts.append(f"Ubicación: {job.location}")
-
-        if job.job_type:
-            text_parts.append(f"Tipo: {job.get_job_type_display_name()}")
-
-        if job.experience_level:
-            text_parts.append(f"Experiencia: {job.get_experience_display_name()}")
-
-        if job.is_remote:
-            text_parts.append("Trabajo remoto disponible")
-
-        # Información de la empresa
-        if job.company and job.company.company_name:
-            text_parts.append(f"Empresa: {job.company.company_name}")
-
-        if job.company and job.company.industry:
-            text_parts.append(f"Industria: {job.company.industry}")
-
-        return ". ".join(text_parts)
+    def __init__(self, embedding_service_url: str = None, embeddings=None):
+        self.embeddings = embeddings or EmbeddingClient(embedding_service_url)
 
     def get_personalized_job_recommendations(
         self, user=None, user_id: str = None, limit: int = 20
@@ -261,7 +135,7 @@ class JobsService:
         """
         try:
             # Obtener embedding de la consulta
-            query_embedding = self.get_embedding_from_microservice(query)
+            query_embedding = self.embeddings.embed(query)
 
             if not query_embedding:
                 # Fallback a búsqueda textual
@@ -270,7 +144,7 @@ class JobsService:
 
             # Búsqueda por similitud de vectores
             embedding_str = "[" + ",".join(map(str, query_embedding)) + "]"
-            similarity_sql = f"(1 - (embedding <#> '{embedding_str}'))"
+            similarity_sql = "(1 - (embedding <#> %s::vector))"
 
             queryset = Jobs.objects.filter(embedding__isnull=False)
 
@@ -280,16 +154,10 @@ class JobsService:
 
             # Ordenar por similitud
             queryset = queryset.annotate(
-                similarity=RawSQL(similarity_sql, [])
+                similarity=RawSQL(similarity_sql, [embedding_str])
             ).order_by("-similarity")[:limit]
 
             logger.info(f"Búsqueda semántica completada: {queryset.count()} resultados")
-
-            # Registrar interacción de búsqueda si hay usuario
-            if user and user_vector_service:
-                user_vector_service.update_user_vectors_on_interaction(
-                    user_id=str(user.id), interaction_type="job_search", content=query
-                )
 
             return queryset
 
@@ -364,14 +232,6 @@ class JobsService:
             elif interaction_type == "application":
                 Jobs.objects.filter(id=job.id).update(
                     application_count=F("application_count") + 1
-                )
-
-            # Actualizar vectores del usuario si el servicio está disponible
-            if user_vector_service:
-                user_vector_service.update_user_vectors_on_interaction(
-                    user_id=str(user.id),
-                    interaction_type=f"job_{interaction_type}",
-                    content=self._generate_job_embedding_text(job),
                 )
 
             logger.info(
