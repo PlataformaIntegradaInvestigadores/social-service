@@ -57,9 +57,7 @@ class TestFeedViewGet(FeedViewsTestCase):
     def test_feed_por_author_con_cursor_invalido_se_ignora(self):
         _post(author_identity_id="u9")
         with _no_identity():
-            response = self.client.get(
-                "/api/v1/feed/?author=u9&cursor=no-es-fecha"
-            )
+            response = self.client.get("/api/v1/feed/?author=u9&cursor=no-es-fecha")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_feed_trending(self):
@@ -186,7 +184,5 @@ class TestExplainPostTrending(FeedViewsTestCase):
     def test_post_inexistente_404(self):
         import uuid
 
-        response = self.client.get(
-            f"/api/v1/posts/{uuid.uuid4()}/explain-trending/"
-        )
+        response = self.client.get(f"/api/v1/posts/{uuid.uuid4()}/explain-trending/")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

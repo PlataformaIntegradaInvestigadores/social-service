@@ -63,12 +63,10 @@ class TestUpdatePostEmbeddings(TestCase):
 
     def test_post_id_especifico(self):
         post = _post()
-        other = _post()
+        _post()  # second post: must be left out by --post-id
         out = io.StringIO()
         with patch(EMBEDDING_POST, return_value=_mock_embedding_response()):
-            call_command(
-                "update_post_embeddings", f"--post-id={post.id}", stdout=out
-            )
+            call_command("update_post_embeddings", f"--post-id={post.id}", stdout=out)
         self.assertIn("Procesando 1 posts", out.getvalue())
 
     def test_reporta_errores(self):

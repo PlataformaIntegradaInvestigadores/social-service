@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.concensus.domain.entities.debate_reaction import Reaction
-from apps.concensus.infrastructure.api.v1.serializers.debate_reaction_serializer import (
+from apps.concensus.infrastructure.api.v1.serializers.debate_reaction_serializer import (  # noqa: E501
     ReactionSerializer,
 )
 from apps.custom_auth.identity_principal import snapshot_from_principal

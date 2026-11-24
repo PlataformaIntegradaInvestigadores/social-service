@@ -123,9 +123,7 @@ class TestPostulantsViewPost(BasePostulantsViewsTestCase):
     def test_compania_no_puede_postularse(self):
         self.client.force_authenticate(user=self.company)
 
-        response = self.client.post(
-            "/api/v1/applications/", {"job": self.job.id}
-        )
+        response = self.client.post("/api/v1/applications/", {"job": self.job.id})
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
@@ -139,9 +137,7 @@ class TestPostulantsViewPost(BasePostulantsViewsTestCase):
     def test_job_inexistente_retorna_404(self):
         self.client.force_authenticate(user=self.user)
 
-        response = self.client.post(
-            "/api/v1/applications/", {"job": 999999}
-        )
+        response = self.client.post("/api/v1/applications/", {"job": 999999})
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
@@ -149,9 +145,7 @@ class TestPostulantsViewPost(BasePostulantsViewsTestCase):
         Postulants.objects.create(user_identity_id=self.user.id, job=self.job)
         self.client.force_authenticate(user=self.user)
 
-        response = self.client.post(
-            "/api/v1/applications/", {"job": self.job.id}
-        )
+        response = self.client.post("/api/v1/applications/", {"job": self.job.id})
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -264,9 +258,7 @@ class TestApplicationStatusView(BasePostulantsViewsTestCase):
     def test_compania_no_puede_consultar(self):
         self.client.force_authenticate(user=self.company)
 
-        response = self.client.get(
-            f"/api/v1/jobs/{self.job.id}/application-status/"
-        )
+        response = self.client.get(f"/api/v1/jobs/{self.job.id}/application-status/")
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
@@ -281,9 +273,7 @@ class TestApplicationStatusView(BasePostulantsViewsTestCase):
         Postulants.objects.create(user_identity_id=self.user.id, job=self.job)
         self.client.force_authenticate(user=self.user)
 
-        response = self.client.get(
-            f"/api/v1/jobs/{self.job.id}/application-status/"
-        )
+        response = self.client.get(f"/api/v1/jobs/{self.job.id}/application-status/")
 
         self.assertTrue(response.data["has_applied"])
         self.assertIsNotNone(response.data["application"])
@@ -291,9 +281,7 @@ class TestApplicationStatusView(BasePostulantsViewsTestCase):
     def test_retorna_has_applied_false_sin_postulacion(self):
         self.client.force_authenticate(user=self.user)
 
-        response = self.client.get(
-            f"/api/v1/jobs/{self.job.id}/application-status/"
-        )
+        response = self.client.get(f"/api/v1/jobs/{self.job.id}/application-status/")
 
         self.assertFalse(response.data["has_applied"])
         self.assertIsNone(response.data["application"])

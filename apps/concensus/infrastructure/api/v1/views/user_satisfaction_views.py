@@ -8,7 +8,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 
 from apps.concensus.domain.entities.user_satisfaction import UserSatisfaction
-from apps.concensus.infrastructure.api.v1.serializers.user_satisfaction_serializer import (
+from apps.concensus.infrastructure.api.v1.serializers.user_satisfaction_serializer import (  # noqa: E501
     UserSatisfactionSerializer,
 )
 from apps.custom_auth.identity_principal import snapshot_from_principal

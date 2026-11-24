@@ -76,7 +76,7 @@ class JobsView(APIView):
             # Para listados usar el serializer apropiado según el tipo de usuario
             user = request.user
             if hasattr(user, "company_name"):  # Es una compañía
-                from apps.jobs.infrastructure.api.v1.serializers.jobs_serializer import (
+                from apps.jobs.infrastructure.api.v1.serializers.jobs_serializer import (  # noqa: E501
                     JobsCompanySerializer,
                 )
 
@@ -84,7 +84,7 @@ class JobsView(APIView):
                     queryset, many=True, context={"request": request}
                 )
             else:  # Es un usuario normal
-                from apps.jobs.infrastructure.api.v1.serializers.jobs_serializer import (
+                from apps.jobs.infrastructure.api.v1.serializers.jobs_serializer import (  # noqa: E501
                     JobsListSerializer,
                 )
 

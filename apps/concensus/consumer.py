@@ -46,7 +46,8 @@ class GroupConnectionConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
         """
         Método asíncrono llamado cuando un cliente se desconecta.
-        Se elimina el cliente del grupo de canales y se decrementa el contador de conexiones activas.
+        Se elimina el cliente del grupo de canales y se decrementa el contador de
+        conexiones activas.
         """
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
@@ -58,7 +59,8 @@ class GroupConnectionConsumer(AsyncWebsocketConsumer):
 
     async def group_message(self, event):
         """
-        Método asíncrono que maneja los mensajes recibidos en el grupo y los envía a través del WebSocket.
+        Método asíncrono que maneja los mensajes recibidos en el grupo y los envía a
+        través del WebSocket.
         """
         message = event["message"]
 
@@ -68,12 +70,15 @@ class GroupConnectionConsumer(AsyncWebsocketConsumer):
     @sync_to_async
     def increment_connection_count(self):
         """
-        Incrementa el contador de conexiones activas en el grupo y notifica a los clientes.
+        Incrementa el contador de conexiones activas en el grupo y notifica a los
+        clientes.
 
-        TODO: AGREGAR EL ID DEL USUARIO MAS ID DE GRUPO PARA SUAMR +1 SI AUN NO ESTA EL REGISTRO
-        Actualmente si se detiene docker y luego se inicia se quedan guardadas las conexiones y toca borrar manualmente
-        esto se controlaria con el id de usuario y el id de grupo sumar +1 si aun no esta el registro.
-        Si se detiene el docker se construye desde cero no hay problema ya q los datos se crean segun la interacion del usuario
+        TODO: AGREGAR EL ID DEL USUARIO MAS ID DE GRUPO PARA SUAMR +1 SI AUN NO ESTA
+        EL REGISTRO. Actualmente si se detiene docker y luego se inicia se quedan
+        guardadas las conexiones y toca borrar manualmente; esto se controlaria con el
+        id de usuario y el id de grupo sumar +1 si aun no esta el registro. Si se
+        detiene el docker se construye desde cero no hay problema ya q los datos se
+        crean segun la interacion del usuario.
         """
         connection_count = self.get_connection_count() + 1
         self.set_connection_count(connection_count)
@@ -82,7 +87,8 @@ class GroupConnectionConsumer(AsyncWebsocketConsumer):
     @sync_to_async
     def decrement_connection_count(self):
         """
-        Decrementa el contador de conexiones activas en el grupo y notifica a los clientes.
+        Decrementa el contador de conexiones activas en el grupo y notifica a los
+        clientes.
         """
         connection_count = self.get_connection_count() - 1
         if connection_count < 0:

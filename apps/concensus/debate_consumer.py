@@ -97,7 +97,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
         """
         Verifica si los mensajes iniciales ya existen en la base de datos.
         """
-        first_message = f"I want to understand {debate.title} better, how do you see it, do you have experience or knowledge that you can contribute?"
+        first_message = (
+            f"I want to understand {debate.title} better, how do you see it, do you "
+            "have experience or knowledge that you can contribute?"
+        )
         second_message = debate.description
 
         return Message.objects.filter(
@@ -106,13 +109,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def send_initial_messages(self, debate):
         """
-        Envía los dos primeros mensajes automáticamente **solo si no han sido enviados antes**.
+        Envía los dos primeros mensajes automáticamente **solo si no han sido
+        enviados antes**.
         """
         messages_exist = await self.has_initial_messages(debate)
         if messages_exist:
             return  # No enviar si ya existen
 
-        first_message = f"I want to understand {debate.title} better, how do you see it, do you have experience or knowledge that you can contribute?"
+        first_message = (
+            f"I want to understand {debate.title} better, how do you see it, do you "
+            "have experience or knowledge that you can contribute?"
+        )
         second_message = debate.description
 
         for text in [first_message, second_message]:

@@ -185,7 +185,6 @@ class TestCommentRepliesView(CommentViewsTestCase):
     def test_maximo_de_anidacion_403(self):
         """Regresion: perform_create usaba parent_comment.thread_depth
         (atributo inexistente); ahora usa get_level()."""
-        parent = None
         comment = Comment.objects.create(
             post=self.post, author_identity_id="u1", content="raiz"
         )
@@ -219,9 +218,7 @@ class TestCommentSearchView(CommentViewsTestCase):
     def test_busca_por_post_id(self):
         other_post = _post()
         Comment.objects.create(post=self.post, author_identity_id="u1", content="c1")
-        Comment.objects.create(
-            post=other_post, author_identity_id="u1", content="c2"
-        )
+        Comment.objects.create(post=other_post, author_identity_id="u1", content="c2")
         with _no_identity():
             response = self.client.get(
                 f"/api/v1/comments/search/?post_id={self.post.id}"

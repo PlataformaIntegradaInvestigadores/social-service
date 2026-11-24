@@ -105,9 +105,7 @@ class TestUpdateJobEmbeddingsCommand(BaseCommandTestCase):
 
 class TestUpdateMissingJobEmbeddingsTask(BaseCommandTestCase):
     def test_invoca_el_management_command(self):
-        with patch(
-            "apps.jobs.tasks.call_command"
-        ) as mock_call_command:
+        with patch("apps.jobs.tasks.call_command") as mock_call_command:
             update_missing_job_embeddings()
 
         mock_call_command.assert_called_once_with(
@@ -115,8 +113,6 @@ class TestUpdateMissingJobEmbeddingsTask(BaseCommandTestCase):
         )
 
     def test_no_lanza_si_el_comando_falla(self):
-        with patch(
-            "apps.jobs.tasks.call_command", side_effect=RuntimeError("boom")
-        ):
+        with patch("apps.jobs.tasks.call_command", side_effect=RuntimeError("boom")):
             # No debe propagar la excepcion, la tarea la captura y loguea.
             update_missing_job_embeddings()
