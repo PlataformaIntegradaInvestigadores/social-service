@@ -17,8 +17,11 @@ from django.core.asgi import get_asgi_application
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "project.settings")
 django.setup()
 
-from apps.concensus.infrastructure.api.v1.urls.routing import websocket_urlpatterns
-from apps.custom_auth.middleware import JwtAuthMiddleware
+# These imports need the app registry that django.setup() just loaded.
+from apps.concensus.infrastructure.api.v1.urls.routing import (  # noqa: E402
+    websocket_urlpatterns,
+)
+from apps.custom_auth.middleware import JwtAuthMiddleware  # noqa: E402
 
 application = ProtocolTypeRouter(
     {

@@ -21,7 +21,8 @@ class HasProfileSyncToken(permissions.BasePermission):
 
 
 class CompanyIdentitySyncView(APIView):
-    """Internal anti-corruption endpoint between Identity and the company profile store."""
+    """Internal anti-corruption endpoint between Identity and the company profile
+    store."""
 
     authentication_classes = []
     permission_classes = [HasProfileSyncToken]
@@ -48,7 +49,11 @@ class CompanyIdentitySyncView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        email_conflict = Company.objects.filter(username__iexact=username).exclude(id=company_id).exists()
+        email_conflict = (
+            Company.objects.filter(username__iexact=username)
+            .exclude(id=company_id)
+            .exists()
+        )
         if email_conflict:
             return Response(
                 {"detail": "A company profile with this email already exists."},
@@ -66,7 +71,9 @@ class CompanyIdentitySyncView(APIView):
             "founded_year": request.data.get("founded_year") or None,
             "employee_count": request.data.get("employee_count") or None,
         }
-        company, created = Company.objects.update_or_create(id=company_id, defaults=defaults)
+        company, created = Company.objects.update_or_create(
+            id=company_id, defaults=defaults
+        )
         if created:
             company.password = make_password(None)
             company.save(update_fields=["password"])

@@ -11,11 +11,11 @@ from rest_framework.test import APIClient, APITestCase
 
 from apps.custom_auth.identity_principal import IdentityPrincipal
 from apps.feeds.domain.entities.feed_post import FeedPost
-from apps.feeds.domain.entities.post_file import PostFile
 
 # Necesario para que Django registre "feeds.Poll" (FeedPost.poll es un
 # OneToOneField lazy hacia ese modelo); ver test_feed_service.py.
 from apps.feeds.domain.entities.poll import Poll  # noqa: F401
+from apps.feeds.domain.entities.post_file import PostFile
 
 IDENTITY_GET = "apps.custom_auth.identity_profile_client.requests.get"
 EMBEDDING_POST = "apps.shared.embedding_client.requests.post"

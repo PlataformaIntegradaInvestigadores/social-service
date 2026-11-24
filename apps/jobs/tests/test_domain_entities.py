@@ -2,6 +2,7 @@
 Postulants y JobInteraction (propiedades derivadas de snapshot, display
 names, comportamiento de save)."""
 
+from django.db import IntegrityError
 from django.test import TestCase
 
 from apps.custom_auth.identity_principal import IdentityPrincipal
@@ -234,7 +235,7 @@ class TestJobInteraction(TestCase):
         JobInteraction.objects.create(
             user_identity_id="u1", job=self.job, interaction_type="view"
         )
-        with self.assertRaises(Exception):
+        with self.assertRaises(IntegrityError):
             JobInteraction.objects.create(
                 user_identity_id="u1", job=self.job, interaction_type="view"
             )

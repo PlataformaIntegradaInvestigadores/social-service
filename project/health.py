@@ -1,10 +1,10 @@
 import logging
 import socket
 
+import redis
 from django.conf import settings
 from django.db import connection
 from django.http import JsonResponse
-import redis
 
 logger = logging.getLogger(__name__)
 

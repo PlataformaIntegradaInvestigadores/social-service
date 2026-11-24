@@ -1,7 +1,6 @@
 """Unitarias de las vistas de likes: LikeToggleView, UserLikesView,
 like_post, like_comment, post_likes, comment_likes."""
 
-from django.contrib.contenttypes.models import ContentType
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 

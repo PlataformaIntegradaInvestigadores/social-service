@@ -638,8 +638,14 @@ class FeedService:
                     {fts_match_sql} * 0.30 +
                     LEAST({fts_rank_sql} * 10.0, 1.0) * 0.10 +
                     {tag_boost_sql} * 0.10 +
-                    LEAST(COALESCE("feeds_feedpost"."engagement_score", 0) / 100.0, 1.0) * 0.07 +
-                    (1.0 / (1.0 + EXTRACT(EPOCH FROM (NOW() - "feeds_feedpost"."created_at")) / 2592000.0)) * 0.03
+                    LEAST(
+                        COALESCE("feeds_feedpost"."engagement_score", 0) / 100.0, 1.0
+                    ) * 0.07 +
+                    (1.0 / (
+                        1.0 + EXTRACT(
+                            EPOCH FROM (NOW() - "feeds_feedpost"."created_at")
+                        ) / 2592000.0
+                    )) * 0.03
                 )
             """
 

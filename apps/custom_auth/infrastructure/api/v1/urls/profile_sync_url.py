@@ -1,10 +1,10 @@
 from django.urls import path
 
-from apps.custom_auth.infrastructure.api.v1.views.retired_legacy_identity_views import (
-    RetiredLegacyIdentityRouteView,
-)
 from apps.custom_auth.infrastructure.api.v1.views.company_identity_sync_views import (
     CompanyIdentitySyncView,
+)
+from apps.custom_auth.infrastructure.api.v1.views.retired_legacy_identity_views import (
+    RetiredLegacyIdentityRouteView,
 )
 
 urlpatterns = [

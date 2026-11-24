@@ -87,10 +87,10 @@ class NotificationPhaseTwo(models.Model):
 
 TABLA NOTIFICATION_PHASE_ONE
 
-id	|user_id |group_id	|notification_type	|message	                     |created_at	        
-----------------------------------------------------------------------------------------------------
-1	12345	 67890	    new_topic	        Ricardo Díaz 📥 added Topic 6	 2024-07-01 10:00:00	
-2	67891	 12345	    topic_visited	    Carlos Gómez 👀 visited Topic 1	 2024-07-01 10:05:00	
+id | user_id | group_id | notification_type | message | created_at
+--------------------------------------------------------------------------------
+1 | 12345 | 67890 | new_topic | Ricardo Díaz 📥 added Topic 6 | 2024-07-01 10:00
+2 | 67891 | 12345 | topic_visited | Carlos Gómez 👀 visited Topic 1 | 2024-07-01 10:05
 
  """
 

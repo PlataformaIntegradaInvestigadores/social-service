@@ -107,9 +107,7 @@ class TestVotePoll(PollViewsTestCase):
             format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(
-            PollVote.objects.filter(user_identity_id="u1").count(), 1
-        )
+        self.assertEqual(PollVote.objects.filter(user_identity_id="u1").count(), 1)
 
 
 class TestRemoveVote(PollViewsTestCase):

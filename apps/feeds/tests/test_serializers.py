@@ -9,8 +9,8 @@ from unittest.mock import patch
 
 import requests
 from django.contrib.contenttypes.models import ContentType
-from django.http import QueryDict
 from django.test import RequestFactory, SimpleTestCase, TestCase
+from rest_framework.exceptions import ValidationError
 
 from apps.custom_auth.identity_principal import IdentityPrincipal
 from apps.feeds.domain.entities.comment import Comment
@@ -76,9 +76,7 @@ class TestCommentSerializer(TestCase):
             content="hola",
         )
         with _no_identity():
-            data = CommentSerializer(
-                comment, context={"request": _request()}
-            ).data
+            data = CommentSerializer(comment, context={"request": _request()}).data
         self.assertEqual(data["author"]["username"], "ana")
 
     def test_get_replies_count_ignora_borrados(self):
@@ -113,9 +111,7 @@ class TestCommentSerializer(TestCase):
             user_identity_id="u1", content_type=ct, object_id=comment.id
         )
         with _no_identity():
-            data = CommentSerializer(
-                comment, context={"request": _request(user)}
-            ).data
+            data = CommentSerializer(comment, context={"request": _request(user)}).data
         self.assertTrue(data["is_liked"])
 
 
@@ -136,9 +132,7 @@ class TestCommentCreateSerializer(TestCase):
 
     def test_no_permite_responder_a_borrado(self):
         post = _post()
-        parent = Comment.objects.create(
-            post=post, author_identity_id="u1", content="c"
-        )
+        parent = Comment.objects.create(post=post, author_identity_id="u1", content="c")
         parent.soft_delete()
         serializer = CommentCreateSerializer(
             data={"content": "hola", "parent_comment": str(parent.id)}
@@ -162,9 +156,7 @@ class TestCommentDetailSerializer(TestCase):
             post=post, author_identity_id="u4", content="l3", parent_comment=lvl2
         )
         with _no_identity():
-            data = CommentDetailSerializer(
-                lvl2, context={"request": _request()}
-            ).data
+            data = CommentDetailSerializer(lvl2, context={"request": _request()}).data
         # lvl2.get_level() == 2 < 3, entonces si expone replies (bloqueadas
         # solo en level >= 3)
         self.assertIsInstance(data["replies"], list)
@@ -183,9 +175,7 @@ class TestCommentThreadSerializer(TestCase):
             post=post, author_identity_id="u2", content="hijo", parent_comment=root
         )
         with _no_identity():
-            data = CommentThreadSerializer(
-                root, context={"request": _request()}
-            ).data
+            data = CommentThreadSerializer(root, context={"request": _request()}).data
         self.assertEqual(len(data["replies"]), 1)
 
     def test_get_user_has_liked(self):
@@ -230,17 +220,17 @@ class TestFlexibleTagsField(SimpleTestCase):
 
     def test_json_totalmente_invalido_falla(self):
         field = FlexibleTagsField()
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValidationError):
             field.to_internal_value("[not valid")
 
     def test_lista_no_string_falla(self):
         field = FlexibleTagsField()
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValidationError):
             field.to_internal_value(123)
 
     def test_item_no_string_falla(self):
         field = FlexibleTagsField()
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValidationError):
             field.to_internal_value([1, 2])
 
     def test_to_representation(self):
@@ -262,9 +252,7 @@ class TestFeedPostCreateSerializer(TestCase):
         from django.core.files.uploadedfile import SimpleUploadedFile
 
         files = [SimpleUploadedFile(f"{i}.txt", b"x") for i in range(11)]
-        serializer = FeedPostCreateSerializer(
-            data={"content": "c", "files": files}
-        )
+        serializer = FeedPostCreateSerializer(data={"content": "c", "files": files})
         self.assertFalse(serializer.is_valid())
         self.assertIn("files", serializer.errors)
 
@@ -412,7 +400,6 @@ class TestUserInteractionSerializer(TestCase):
 
     def test_metadata_no_dict(self):
         post = _post()
-        qd = QueryDict(mutable=True)
         serializer = UserInteractionSerializer(
             data={
                 "post_id": str(post.id),
@@ -457,7 +444,10 @@ class TestFeedFilterSerializer(SimpleTestCase):
 
     def test_date_from_mayor_a_date_to_invalido(self):
         serializer = FeedFilterSerializer(
-            data={"date_from": "2026-02-01T00:00:00Z", "date_to": "2026-01-01T00:00:00Z"}
+            data={
+                "date_from": "2026-02-01T00:00:00Z",
+                "date_to": "2026-01-01T00:00:00Z",
+            }
         )
         self.assertFalse(serializer.is_valid())
 
@@ -473,7 +463,6 @@ class TestLikeSerializer(TestCase):
 
     def test_get_content_object_sin_atributo_content(self):
         poll = Poll.objects.create(question="Q1")
-        user = IdentityPrincipal(id="u1")
         ct = ContentType.objects.get_for_model(Poll)
         like = Like.objects.create(
             user_identity_id="u1", content_type=ct, object_id=poll.id
